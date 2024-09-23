@@ -1,0 +1,97 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:SYNC-REQ-YYYY-{####}",
+ "creation": "2024-09-23 15:24:02.751091",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "end_point",
+  "attempts",
+  "column_break_gecq",
+  "status",
+  "doc_owner",
+  "section_break_hzbs",
+  "request_data",
+  "column_break_icrr",
+  "response_data"
+ ],
+ "fields": [
+  {
+   "fieldname": "end_point",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "End Point",
+   "reqd": 1
+  },
+  {
+   "fieldname": "request_data",
+   "fieldtype": "JSON",
+   "label": "Request Data"
+  },
+  {
+   "description": "Counts number of retries",
+   "fieldname": "attempts",
+   "fieldtype": "Int",
+   "label": "Attempts"
+  },
+  {
+   "fieldname": "column_break_gecq",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "New\nSuccess\nError\nDo not Retry"
+  },
+  {
+   "fieldname": "response_data",
+   "fieldtype": "JSON",
+   "label": "Response Data"
+  },
+  {
+   "fieldname": "doc_owner",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Doc_Owner",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_hzbs",
+   "fieldtype": "Section Break",
+   "label": "Sync Data"
+  },
+  {
+   "fieldname": "column_break_icrr",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-09-23 15:39:40.030534",
+ "modified_by": "Administrator",
+ "module": "Smart Invoice Api",
+ "name": "Sync Request",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
