@@ -1,8 +1,7 @@
 import frappe
 
 def sync_all_pending_requests():
-
-    logging.info("sync_all_pending_requests_started")
+    print("sending sync request!!")
     # Get all pending Sync Request documents
     pending_requests = frappe.get_all('Sync Request', 
         filters={'status': 'New'}, 
