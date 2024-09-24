@@ -3,16 +3,18 @@
 
 frappe.ui.form.on("Sync Request", {
 	refresh(frm) {
-        let attempts = 0;
-        // increment attempts after sync attempt
-        frm.add_custom_button("Sync", () => {
-            attempts += 1;
-            frm.set_value('attempts', attempts); 
-        })
+        // frm.add_custom_button("Sync", () => {
+        //     frappe.call({
+        //         method: 'smart_invoice_api.smart_invoice_api.doctype.sync_request.sync_attempt.sync_attempt',
+        //         args: {
+        //             docname: frm.doc.name
+        //         }
+        //     });
+        // });
         // reset attempts
         frm.add_custom_button("Reset Attempt", () => {
             frm.set_value('attempts', 0); 
-        })
+        });
 	},
     attempts(frm) {
         // Alert Admins after 6 tries
