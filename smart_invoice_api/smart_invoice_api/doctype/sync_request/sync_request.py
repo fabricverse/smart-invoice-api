@@ -3,7 +3,7 @@
 
 import frappe
 from frappe.model.document import Document
-from smart_invoice_api.api import call_vsdc, get_status
+from smart_invoice_api.api import sync_attempt
 
 
 """
@@ -14,13 +14,6 @@ class SyncRequest(Document):
 		# frappe.enqueue(sync_attempt, doc=self, queue='short')
 		sync_attempt(self)
 
-def sync_attempt(doc):	
-	vsdc_response = call_vsdc(doc.end_point, doc.request_data)
-	# print("Sync Request created", r)
-	doc.attempts += 1
-	doc.response_data = vsdc_response
-	doc.status = get_status(vsdc_response)
-	doc.save()
 
 	
 

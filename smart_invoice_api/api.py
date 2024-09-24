@@ -60,3 +60,11 @@ def get_status(response):
         return "Success"
     else:
         return "Error"
+
+
+def sync_attempt(doc):	
+	vsdc_response = call_vsdc(doc.end_point, doc.request_data)
+	doc.attempts += 1
+	doc.response_data = vsdc_response
+	doc.status = get_status(vsdc_response)
+	doc.save()
