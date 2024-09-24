@@ -134,22 +134,34 @@ app_license = "mit"
 # ---------------
 
 # scheduler_events = {
-# 	"all": [
-# 		"smart_invoice_api.tasks.all"
-# 	],
-# 	"daily": [
-# 		"smart_invoice_api.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"smart_invoice_api.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"smart_invoice_api.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"smart_invoice_api.tasks.monthly"
-# 	],
+#     "cron": {
+#         "* * * * *": [
+#             "smart_invoice_api.sync_attempt.sync_all_pending_requests"
+#         ]
+#     },
 # }
+scheduler_events = {
+    "cron": {
+        "* * * * *": [
+            "smart_invoice_api.tasks.sync_all_pending_requests"
+        ]
+    },
+	# "all": [
+	# 	"smart_invoice_api.tasks.all"
+	# ],
+	# "daily": [
+	# 	"smart_invoice_api.tasks.daily"
+	# ],
+	# "hourly": [
+	# 	"smart_invoice_api.tasks.hourly"
+	# ],
+	# "weekly": [
+	# 	"smart_invoice_api.tasks.weekly"
+	# ],
+	# "monthly": [
+	# 	"smart_invoice_api.tasks.monthly"
+	# ],
+}
 
 # Testing
 # -------
