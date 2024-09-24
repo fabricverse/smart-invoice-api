@@ -21,9 +21,14 @@
    "reqd": 1
   },
   {
+   "allow_in_quick_entry": 1,
+   "bold": 1,
    "fieldname": "base_url",
    "fieldtype": "Data",
+   "in_filter": 1,
+   "in_list_view": 1,
    "in_preview": 1,
+   "in_standard_filter": 1,
    "label": "Base URL",
    "options": "URL",
    "reqd": 1
@@ -32,7 +37,7 @@
  "hide_toolbar": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-09-23 20:42:32.354628",
+ "modified": "2024-09-24 12:34:12.000070",
  "modified_by": "Administrator",
  "module": "Smart Invoice API",
  "name": "Environment",
@@ -50,6 +55,7 @@
    "write": 1
   }
  ],
+ "quick_entry": 1,
  "show_preview_popup": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
