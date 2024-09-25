@@ -1,11 +1,5 @@
 {
- "actions": [
-  {
-   "action": "smart_invoice_app.app.run_test",
-   "action_type": "Server Action",
-   "label": "Test"
-  }
- ],
+ "actions": [],
  "allow_copy": 1,
  "allow_rename": 1,
  "creation": "2024-09-24 12:14:23.442252",
@@ -80,7 +74,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2024-09-24 12:14:23.442252",
+ "modified": "2024-09-25 06:47:03.400489",
  "modified_by": "Administrator",
  "module": "Smart Invoice API",
  "name": "VSDC Settings",
