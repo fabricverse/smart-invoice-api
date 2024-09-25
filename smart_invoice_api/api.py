@@ -6,8 +6,9 @@ import requests
 
 # called from smart_invoice_app / rest api
 @frappe.whitelist()
-def select_codes():
-    data = frappe.request.json
+def select_codes(data=None):
+    if not data:
+        data = frappe.request.json
     end_point = "/code/selectCodes"
     data = {
         "tpin": data["tpin"],
@@ -28,6 +29,7 @@ def create_sync_request(end_point, data):
             "request_data": data            
         })
         sr.insert(ignore_permissions=True)   
+        return sr
         frappe.db.commit() 
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Error creating Sync Request")
@@ -68,3 +70,16 @@ def sync_attempt(doc):
 	doc.response_data = vsdc_response
 	doc.status = get_status(vsdc_response)
 	doc.save()
+
+@frappe.whitelist()
+def test_connection():
+    settings = get_settings()
+    data={
+        "tpin": settings.tpin, "bhf_id": "000"
+    }
+    sr = select_codes(data)
+    if sr:
+        frappe.msgprint("Connection Successful")
+    else:
+        frappe.msgprint("Connection Failed")
+    frappe.errprint("sync request: " + sr.name)
