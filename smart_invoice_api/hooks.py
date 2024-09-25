@@ -224,6 +224,13 @@ scheduler_events = {
 # 		"doctype": "{doctype_4}"
 # 	}
 # ]
+# Export Environment DocType entries
+fixtures = [
+    {
+        "doctype": "Environment"
+    }
+]
+
 
 # Authentication and authorization
 # --------------------------------
