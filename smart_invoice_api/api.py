@@ -45,6 +45,7 @@ def call_vsdc(end_point, data):
         return response_json.get("message", response_json)
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Error calling VSDC")
+        frappe.throw(str(e))
         return {"error": str(e)}
 
 
@@ -82,4 +83,4 @@ def test_connection():
         frappe.msgprint("Connection Successful")
     else:
         frappe.msgprint("Connection Failed")
-    frappe.errprint("sync request: " + sr.name)
+    frappe.errprint("sync request: " + str(sr.name) + ": " + str(sr.status) + " \n" + str(sr.response_data))
