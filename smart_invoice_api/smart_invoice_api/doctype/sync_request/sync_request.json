@@ -6,7 +6,7 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "end_point",
+  "endpoint",
   "attempts",
   "column_break_gecq",
   "status",
@@ -17,13 +17,6 @@
   "response_data"
  ],
  "fields": [
-  {
-   "fieldname": "end_point",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "End Point",
-   "reqd": 1
-  },
   {
    "fieldname": "request_data",
    "fieldtype": "JSON",
@@ -51,6 +44,7 @@
   {
    "fieldname": "response_data",
    "fieldtype": "JSON",
+   "in_filter": 1,
    "label": "Response Data",
    "read_only": 1
   },
@@ -71,11 +65,19 @@
   {
    "fieldname": "column_break_icrr",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "endpoint",
+   "fieldtype": "Data",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "label": "End Point",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-09-24 16:21:38.315923",
+ "modified": "2024-09-26 14:56:39.674311",
  "modified_by": "Administrator",
  "module": "Smart Invoice API",
  "name": "Sync Request",

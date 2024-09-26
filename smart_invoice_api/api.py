@@ -2,28 +2,52 @@ import frappe
 import json
 import requests
 
+def get_last_request_date(endpoint):
+    # find the last sync_request with status success, endpoint and request_data containing lastReqDt
+    sync_request = frappe.get_all(
+        "Sync Request",
+        filters=[
+            ["status", "=", "Success"],
+            ["endpoint", "=", endpoint],
+            ["response_data", "like", "%resultDt%"],
+            ["response_data", "not like", '%"resultDt":null%']
+        ],
+        fields=["response_data"],
+        order_by="creation desc",
+        limit=1
+    )
+    
+    if sync_request:
+        response_data = sync_request[0].response_data
+        response_data_json = json.loads(response_data)
 
-
+        if response_data_json.get("resultDt", None):    
+            return response_data_json.get("resultDt", None)    
+    return "20231001200000"
 # called from smart_invoice_app / rest api
 @frappe.whitelist()
 def select_codes(data=None):
     if not data:
         data = frappe.request.json
-    end_point = "/code/selectCodes"
+    endpoint = "/code/selectCodes"
+    last_req_dt = get_last_request_date(endpoint)
+
+    frappe.errprint("last_req_dt: " + last_req_dt)
     data = {
         "tpin": data["tpin"],
         "bhfId": data["bhf_id"],
-        "lastReqDt": "20240902151722"
+        "lastReqDt": last_req_dt
     }
-    return create_sync_request(end_point, data)
+    return create_sync_request(endpoint, data)
+    
 
 # creating a sync request doc triggers the call to vsdc
-def create_sync_request(end_point, data):
+def create_sync_request(endpoint, data):
     try:
         sr = frappe.get_doc({
             "doctype": "Sync Request",
             "attempts": 0,
-            "end_point": end_point,
+            "endpoint": endpoint,
             "status": "New",
             "doc_owner": frappe.session.user,
             "request_data": data            
@@ -36,11 +60,11 @@ def create_sync_request(end_point, data):
         return {"error": str(e)}
 
 # to be called from sync_request doctype
-def call_vsdc(end_point, data):
+def call_vsdc(endpoint, data):
     settings = get_settings()
     base_url = settings.base_url
     try:
-        r = requests.post(base_url + end_point, json=data, headers={"Content-Type": "application/json"})
+        r = requests.post(base_url + endpoint, json=data, headers={"Content-Type": "application/json"})
         response_json = r.json()
         return response_json.get("message", response_json)
     except Exception as e:
@@ -66,7 +90,7 @@ def get_status(response):
 
 
 def sync_attempt(doc):	
-	vsdc_response = call_vsdc(doc.end_point, doc.request_data)
+	vsdc_response = call_vsdc(doc.endpoint, doc.request_data)
 	doc.attempts += 1
 	doc.response_data = vsdc_response
 	doc.status = get_status(vsdc_response)
