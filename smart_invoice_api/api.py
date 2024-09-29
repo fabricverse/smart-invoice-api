@@ -30,9 +30,11 @@ def select_codes(data=None):
     if not data:
         data = frappe.request.json
     endpoint = "/code/selectCodes"
-    last_req_dt = get_last_request_date(endpoint)
-
-    frappe.errprint("last_req_dt: " + last_req_dt)
+    if data.get("initialize", False):
+        last_req_dt = "20231001200000"
+    else:
+        last_req_dt = get_last_request_date(endpoint)
+    
     data = {
         "tpin": data["tpin"],
         "bhfId": data["bhf_id"],
