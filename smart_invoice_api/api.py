@@ -41,6 +41,25 @@ def select_codes(data=None):
         "lastReqDt": last_req_dt
     }
     return create_sync_request(endpoint, data)
+
+
+@frappe.whitelist()
+def get_item_classes(data=None):
+    if not data:
+        data = frappe.request.json
+    endpoint = "/itemClass/selectItemsClass"
+
+    if data.get("initialize", False):
+        last_req_dt = "20231001200000"
+    else:
+        last_req_dt = get_last_request_date(endpoint)
+    
+    data = {
+        "tpin": data["tpin"],
+        "bhfId": data["bhf_id"],
+        "lastReqDt": last_req_dt
+    }
+    return create_sync_request(endpoint, data)
     
 
 # creating a sync request doc triggers the call to vsdc
