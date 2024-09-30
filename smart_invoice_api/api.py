@@ -24,6 +24,8 @@ def get_last_request_date(endpoint):
         if response_data_json.get("resultDt", None):    
             return response_data_json.get("resultDt", None)    
     return "20231001200000"
+
+
 # called from smart_invoice_app / rest api
 @frappe.whitelist()
 def select_codes(data=None):
@@ -48,6 +50,25 @@ def select_item_classes(data=None):
     if not data:
         data = frappe.request.json
     endpoint = "/itemClass/selectItemsClass"
+
+    if data.get("initialize", False):
+        last_req_dt = "20231001200000"
+    else:
+        last_req_dt = get_last_request_date(endpoint)
+    
+    data = {
+        "tpin": data["tpin"],
+        "bhfId": data["bhf_id"],
+        "lastReqDt": last_req_dt
+    }
+    return create_sync_request(endpoint, data)
+
+
+@frappe.whitelist()
+def select_branches(data=None):
+    if not data:
+        data = frappe.request.json
+    endpoint = "/branches/selectBranches"
 
     if data.get("initialize", False):
         last_req_dt = "20231001200000"
