@@ -44,7 +44,7 @@ def select_codes(data=None):
 
 
 @frappe.whitelist()
-def get_item_classes(data=None):
+def select_item_classes(data=None):
     if not data:
         data = frappe.request.json
     endpoint = "/itemClass/selectItemsClass"
