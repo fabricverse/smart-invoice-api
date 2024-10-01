@@ -65,6 +65,34 @@ def select_item_classes(data=None):
 
 
 @frappe.whitelist()
+def save_branche_user(data=None):
+    if not data:
+        data = frappe.request.json
+    endpoint = "/branches/saveBrancheUser"
+
+    if data.get("initialize"):
+        last_req_dt = "20231001200000"
+    else:
+        last_req_dt = get_last_request_date(endpoint)
+    
+    # Include all the required user data in the API request
+    api_data = {
+        "tpin": data["tpin"],
+        "bhfId": data["bhfId"],
+        "userId": data["userId"],
+        "userNm": data["userNm"],
+        "adrs": data["adrs"],
+        "useYn": data["useYn"],
+        "regrNm": data["regrNm"],
+        "regrId": data["regrId"],
+        "modrNm": data["modrNm"],
+        "modrId": data["modrId"],
+        "lastReqDt": last_req_dt
+    }
+    return create_sync_request(endpoint, api_data)
+
+
+@frappe.whitelist()
 def select_branches(data=None):
     if not data:
         data = frappe.request.json
