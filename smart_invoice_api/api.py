@@ -91,6 +91,32 @@ def save_branche_user(data=None):
     }
     return create_sync_request(endpoint, api_data)
 
+@frappe.whitelist()
+def save_branche_customer(data=None):
+    if not data:
+        data = frappe.request.json
+    endpoint = "/branches/saveBrancheCustomers"
+
+    # Include all the required data in the API request
+    api_data = {
+        "tpin": data["tpin"],
+        "bhfId": data["bhfId"],
+        "custNo": data["custNo"],
+        "custTpin": data["custTpin"],
+        "custNm": data["custNm"],
+        "adrs": data["adrs"],
+        "email": data["email"],
+        "faxNo": data["faxNo"],
+        "useYn": data["useYn"],
+        "remark": data.get("remark", ""),
+        "regrNm": data["regrNm"],
+        "regrId": data["regrId"],
+        "modrNm": data["modrNm"],
+        "modrId": data["modrId"]
+    }
+    
+    return create_sync_request(endpoint, api_data)
+
 
 @frappe.whitelist()
 def select_branches(data=None):
