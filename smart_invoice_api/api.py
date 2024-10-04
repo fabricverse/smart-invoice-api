@@ -99,28 +99,6 @@ def save_item(data=None):
     return create_sync_request(endpoint, data)
 
 
-@frappe.whitelist()
-def select_item(data=None):
-    if not data:
-        data = frappe.request.json
-    endpoint = "/items/selectItem"
-    return create_sync_request(endpoint, data)
-
-@frappe.whitelist()
-def select_items(data=None):
-    if not data:
-        data = frappe.request.json
-
-    endpoint = "/items/selectItems"
-    
-    if data.get("initialize", False):
-        last_req_dt = "20231001200000"
-    else:
-        last_req_dt = get_last_request_date(endpoint)
-
-    data.update({"lastReqDt": last_req_dt})
-
-    return create_sync_request(endpoint, data)
 
 @frappe.whitelist()
 def update_item(data=None):
@@ -175,12 +153,35 @@ def select_branches(data=None):
     return create_sync_request(endpoint, data)
     
 
+@frappe.whitelist()
+def select_item(data=None):
+    if not data:
+        data = frappe.request.json
+    endpoint = "/items/selectItem"
+    return create_sync_request(endpoint, data)
+
+@frappe.whitelist()
+def select_items(data=None):
+    if not data:
+        data = frappe.request.json
+
+    endpoint = "/items/selectItems"
+    
+    if data.get("initialize", False):
+        last_req_dt = "20231001200000"
+    else:
+        last_req_dt = get_last_request_date(endpoint)
+
+    data.update({"lastReqDt": last_req_dt})
+
+    return create_sync_request(endpoint, data)
+
 # creating a sync request doc triggers the call to vsdc
 def create_sync_request(endpoint, data):
     
     try:
         if not data:
-            frappe.throw(f"{frappe.bold("data")} is required to create a sync request")
+            return {"response_data": {"resultCd": "10000", "resultMsg": f"{frappe.bold('data')} is required to create a sync request"}}
         sr = frappe.get_doc({
             "doctype": "Sync Request",
             "attempts": 0,
@@ -226,11 +227,11 @@ def get_status(response):
 
 
 def sync_attempt(doc):	
-	vsdc_response = call_vsdc(doc.endpoint, doc.request_data)
-	doc.attempts += 1
-	doc.response_data = vsdc_response
-	doc.status = get_status(vsdc_response)
-	doc.save()
+    vsdc_response = call_vsdc(doc.endpoint, doc.request_data)
+    doc.attempts += 1
+    doc.response_data = vsdc_response
+    doc.status = get_status(vsdc_response)
+    doc.save()
 
 @frappe.whitelist()
 def test_connection():
