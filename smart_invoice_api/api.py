@@ -96,25 +96,35 @@ def save_item(data=None):
     if not data:
         data = frappe.request.json
     endpoint = "/items/saveItem"
+    return create_sync_request(endpoint, data)
 
-    # # Include all the required data in the API request
-    # api_data = {
-    #     "tpin": data["tpin"],
-    #     "bhfId": data["bhfId"],
-    #     "custNo": data["custNo"],
-    #     "custTpin": data["custTpin"],
-    #     "custNm": data["custNm"],
-    #     "adrs": data["adrs"],
-    #     "email": data["email"],
-    #     "faxNo": data["faxNo"],
-    #     "useYn": data["useYn"],
-    #     "remark": data.get("remark", ""),
-    #     "regrNm": data["regrNm"],
-    #     "regrId": data["regrId"],
-    #     "modrNm": data["modrNm"],
-    #     "modrId": data["modrId"]
-    # }
-    
+
+@frappe.whitelist()
+def select_item(data=None):
+    if not data:
+        data = frappe.request.json
+    endpoint = "/items/selectItem"
+    return create_sync_request(endpoint, data)
+
+@frappe.whitelist()
+def select_items(data=None):
+    if not data:
+        data = frappe.request.json
+
+    if data.get("initialize", False):
+        last_req_dt = "20231001200000"
+    else:
+        last_req_dt = get_last_request_date(endpoint)
+    data = data.update({"lastReqDt": last_req_dt})
+
+    endpoint = "/items/selectItems"
+    return create_sync_request(endpoint, data)
+
+@frappe.whitelist()
+def update_item(data=None):
+    if not data:
+        data = frappe.request.json
+    endpoint = "/items/updateItem"
     return create_sync_request(endpoint, data)
 
 @frappe.whitelist()
