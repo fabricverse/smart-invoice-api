@@ -111,13 +111,13 @@ def select_items(data=None):
     if not data:
         data = frappe.request.json
 
+    endpoint = "/items/selectItems"
     if data.get("initialize", False):
         last_req_dt = "20231001200000"
     else:
         last_req_dt = get_last_request_date(endpoint)
     data = data.update({"lastReqDt": last_req_dt})
 
-    endpoint = "/items/selectItems"
     return create_sync_request(endpoint, data)
 
 @frappe.whitelist()
