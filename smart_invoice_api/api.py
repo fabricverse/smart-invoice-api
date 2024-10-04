@@ -118,7 +118,7 @@ def select_items(data=None):
     else:
         last_req_dt = get_last_request_date(endpoint)
 
-    data = data.update({"lastReqDt": last_req_dt})
+    data.update({"lastReqDt": last_req_dt})
 
     return create_sync_request(endpoint, data)
 
