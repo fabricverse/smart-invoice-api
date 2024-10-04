@@ -10,10 +10,12 @@ def sync_all_pending_requests():
     pending_requests = frappe.get_all('Sync Request', 
         filters={
             'status': ['in', ['New', 'Error']],
-            'attempts': ['<=', int(settings.number_of_retries)]
+            'attempts': ['<=', int(settings.number_of_retries)],
+            'request_data': ['is', 'set']
         },
         pluck='name')
     
     for request_name in pending_requests:
         doc = frappe.get_doc('Sync Request', request_name)
+        
         sync_attempt(doc)
