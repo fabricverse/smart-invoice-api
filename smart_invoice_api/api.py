@@ -177,7 +177,10 @@ def select_branches(data=None):
 
 # creating a sync request doc triggers the call to vsdc
 def create_sync_request(endpoint, data):
+    
     try:
+        if not data:
+            frappe.throw(f"{frappe.bold("data")} is required to create a sync request")
         sr = frappe.get_doc({
             "doctype": "Sync Request",
             "attempts": 0,
@@ -188,7 +191,6 @@ def create_sync_request(endpoint, data):
         })
         sr.insert(ignore_permissions=True)   
         return sr
-        frappe.db.commit() 
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Error creating Sync Request")
         return {"error": str(e)}
