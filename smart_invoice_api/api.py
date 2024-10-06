@@ -92,6 +92,13 @@ def save_branche_user(data=None):
     return create_sync_request(endpoint, api_data)
 
 @frappe.whitelist()
+def save_invoice(data=None):
+    if not data:
+        data = frappe.request.json
+    endpoint = "/trnsSales/saveSales"
+    return create_sync_request(endpoint, data)
+
+@frappe.whitelist()
 def save_item(data=None):
     if not data:
         data = frappe.request.json
