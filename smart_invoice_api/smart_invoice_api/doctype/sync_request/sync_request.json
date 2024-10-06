@@ -1,0 +1,103 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:SYNC-{YY}{MM}-{####}",
+ "creation": "2024-09-23 15:24:02.751091",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "endpoint",
+  "attempts",
+  "column_break_gecq",
+  "status",
+  "doc_owner",
+  "section_break_hzbs",
+  "request_data",
+  "column_break_icrr",
+  "response_data"
+ ],
+ "fields": [
+  {
+   "fieldname": "request_data",
+   "fieldtype": "JSON",
+   "label": "Request Data",
+   "read_only": 1
+  },
+  {
+   "description": "Counts number of retries",
+   "fieldname": "attempts",
+   "fieldtype": "Int",
+   "label": "Attempts",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_gecq",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "New\nSuccess\nError\nDo not Retry",
+   "read_only": 1
+  },
+  {
+   "fieldname": "response_data",
+   "fieldtype": "JSON",
+   "in_filter": 1,
+   "label": "Response Data",
+   "read_only": 1
+  },
+  {
+   "fieldname": "doc_owner",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Owner",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_hzbs",
+   "fieldtype": "Section Break",
+   "label": "Sync Data"
+  },
+  {
+   "fieldname": "column_break_icrr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "endpoint",
+   "fieldtype": "Data",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "label": "End Point",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-09-26 14:56:39.674311",
+ "modified_by": "Administrator",
+ "module": "Smart Invoice API",
+ "name": "Sync Request",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
