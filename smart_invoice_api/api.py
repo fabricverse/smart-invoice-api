@@ -105,7 +105,19 @@ def save_item(data=None):
     endpoint = "/items/saveItem"
     return create_sync_request(endpoint, data)
 
+@frappe.whitelist()
+def save_stock_items(data=None):
+    if not data:
+        data = frappe.request.json
+    endpoint = "/stock/saveStockItems"
+    return create_sync_request(endpoint, data)
 
+@frappe.whitelist()
+def save_stock_master(data=None):
+    if not data:
+        data = frappe.request.json
+    endpoint = "/stockMaster/saveStockMaster"
+    return create_sync_request(endpoint, data)
 
 @frappe.whitelist()
 def update_item(data=None):
