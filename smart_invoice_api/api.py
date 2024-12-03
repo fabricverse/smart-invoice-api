@@ -98,11 +98,26 @@ def save_sales(data=None):
     endpoint = "/trnsSales/saveSales"
     return create_sync_request(endpoint, data)
 
+
+@frappe.whitelist()
+def save_purchase(data=None):
+    if not data:
+        data = frappe.request.json
+    endpoint = "/trnsPurchase/savePurchase"
+    return create_sync_request(endpoint, data)
+
 @frappe.whitelist()
 def save_item(data=None):
     if not data:
         data = frappe.request.json
     endpoint = "/items/saveItem"
+    return create_sync_request(endpoint, data)
+
+@frappe.whitelist()
+def save_item_composition(data=None):
+    if not data:
+        data = frappe.request.json
+    endpoint = "/items/saveItemComposition"
     return create_sync_request(endpoint, data)
 
 @frappe.whitelist()
@@ -171,6 +186,54 @@ def select_branches(data=None):
     }
     return create_sync_request(endpoint, data)
     
+    
+@frappe.whitelist()
+def select_trns_purchase_sales(data=None):
+    if not data:
+        data = frappe.request.json
+    endpoint = "/trnsPurchase/selectTrnsPurchaseSales"
+
+    if data.get("initialize", False):
+        last_req_dt = "20231001200000"
+    else:
+        last_req_dt = get_last_request_date(endpoint)
+    
+    data = {
+        "tpin": data["tpin"],
+        "bhfId": data["bhf_id"],
+        "lastReqDt": last_req_dt
+    }
+    
+    return create_sync_request(endpoint, data)
+
+
+@frappe.whitelist()
+def select_import_items(data=None):
+    if not data:
+        data = frappe.request.json
+    endpoint = "/imports/selectImportItems"
+
+    if data.get("initialize", False):
+        last_req_dt = "20231001200000"
+    else:
+        last_req_dt = get_last_request_date(endpoint)
+    
+    data = {
+        "tpin": data["tpin"],
+        "bhfId": data["bhf_id"],
+        "lastReqDt": last_req_dt
+    }
+    
+    return create_sync_request(endpoint, data)
+
+
+@frappe.whitelist()
+def update_import_items(data=None):
+    if not data:
+        data = frappe.request.json
+    endpoint = "/imports/updateImportItems"
+    return create_sync_request(endpoint, data)
+
 
 @frappe.whitelist()
 def select_item(data=None):
@@ -228,8 +291,6 @@ def call_vsdc(endpoint, data):
         frappe.throw(str(e))
         return {"error": str(e)}
 
-
-    
 
 def get_settings():
     settings = frappe.get_single("VSDC Settings")
