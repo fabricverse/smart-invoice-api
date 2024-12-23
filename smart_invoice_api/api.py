@@ -258,49 +258,102 @@ def select_items(data=None):
 
     return create_sync_request(endpoint, data)
 
+def update_vsdc_details(tpin, vsdc_serial, environment):
+    settings = get_settings()
+
+    if (settings.tpin != tpin or 
+        settings.vsdc_serial != vsdc_serial or
+        settings.environment != environment):
+
+        settings.tpin = tpin 
+        settings.vsdc_serial = vsdc_serial
+        settings.environment = environment 
+
+        settings.save()
+
+
+@frappe.whitelist()
+def initialize_vsdc(data=None):
+    if not data:
+        data = frappe.request.json
+
+    endpoint = "/initializer/selectInitInfo"
+    
+    default_server = data.get("default_server")
+    tpin = data.get("tpin")
+    vsdc_serial = data.get("vsdc_serial")
+    branch = data.get("bhf_id")
+    environment = data.get("environment")
+
+    payload = {
+        "tpin": tpin,
+        "bhfId": branch,
+        "dvcSrlNo": vsdc_serial
+    }
+
+    if default_server == 1:
+        update_vsdc_details(tpin, vsdc_serial, environment)
+
+    return create_sync_request(endpoint, payload)
+
 # creating a sync request doc triggers the call to vsdc
 def create_sync_request(endpoint, data):
     
     try:
         if not data:
             return {"response_data": {"resultCd": "10000", "resultMsg": f"{frappe.bold('data')} is required to create a sync request"}}
-        sr = frappe.get_doc({
-            "doctype": "Sync Request",
-            "attempts": 0,
-            "endpoint": endpoint,
-            "status": "New",
-            "doc_owner": frappe.session.user,
-            "request_data": data            
-        })
-        sr.insert(ignore_permissions=True)   
+        sr = frappe.new_doc("Sync Request")
+        sr.attempts = 0
+        sr.endpoint = endpoint
+        sr.status = "New"
+        sr.doc_owner = frappe.session.user
+        sr.request_data = data            
+        
+        sr.flags.ignore_permissions=True
+        sr.flags.ignore_mandatory=True
+        sr.insert()   
         return sr
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Error creating Sync Request")
+        print(frappe.get_traceback())
         return {"error": str(e)}
 
-# to be called from sync_request doctype
+
+# called from sync_request doctype
 def call_vsdc(endpoint, data):
     settings = get_settings()
     base_url = settings.base_url
+
     try:
-        r = requests.post(base_url + endpoint, json=data, headers={"Content-Type": "application/json"})
+        r = requests.post(
+            base_url + endpoint, 
+            json=data, 
+            headers={"Content-Type": "application/json"},
+            timeout=10  # timeout period in seconds
+        )
         response_json = r.json()
         return response_json.get("message", response_json)
+
+    except json.decoder.JSONDecodeError as e:
+        frappe.msgprint(title="Smart Invoice Failure", msg=str(r.text))
+    except requests.Timeout:
+        error_msg = "Smart Invoice VSDC timedout"
+        frappe.log_error(error_msg, "VSDC timeout")
+        frappe.throw(error_msg)
     except Exception as e:
-        frappe.log_error(frappe.get_traceback(), "Error calling VSDC")
+        frappe.log_error(frappe.get_traceback(), "VSDC Error")
         frappe.throw(str(e))
-        return {"error": str(e)}
 
 
 def get_settings():
-    settings = frappe.get_single("VSDC Settings")
+    settings = frappe.get_cached_doc("VSDC Settings", "VSDC Settings")
     if not settings.base_url or not settings.environment:
         frappe.throw("VSDC Settings are incomplete. The admin will be notified.")
     return settings
 
 
 def get_status(response):
-    if response.get("resultCd"):
+    if response and response.get("resultCd", None):
         return "Success"
     else:
         return "Error"
@@ -320,8 +373,8 @@ def test_connection():
         "tpin": settings.tpin, "bhf_id": "000"
     }
     sr = select_codes(data)
-    if sr:
+    if sr and sr.get("response_data"):
+
         frappe.msgprint("Connection Successful")
     else:
         frappe.msgprint("Connection Failed")
-    frappe.errprint("sync request: " + str(sr.name) + ": " + str(sr.status) + " \n" + str(sr.response_data))
