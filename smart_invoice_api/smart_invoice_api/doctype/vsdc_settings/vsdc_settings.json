@@ -11,9 +11,12 @@
   "base_url",
   "section_break_ctyz",
   "tpin",
-  "vsdc_serial",
   "column_break_btac",
-  "number_of_retries"
+  "vsdc_serial",
+  "section_break_dumx",
+  "number_of_retries",
+  "column_break_kcbg",
+  "timeout"
  ],
  "fields": [
   {
@@ -65,18 +68,32 @@
    "fieldname": "number_of_retries",
    "fieldtype": "Int",
    "in_list_view": 1,
-   "label": "Request Retries before Admin Notification",
+   "label": "Max Retries before Notifying Admin",
    "non_negative": 1,
    "reqd": 1
+  },
+  {
+   "fieldname": "section_break_dumx",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_kcbg",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "30",
+   "fieldname": "timeout",
+   "fieldtype": "Int",
+   "label": "Request Timeout (Secs)"
   }
  ],
  "hide_toolbar": 1,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2024-09-25 06:47:03.400489",
+ "modified": "2024-12-30 21:16:32.777264",
  "modified_by": "Administrator",
- "module": "Smart Invoice API",
+ "module": "Smart Invoice Api",
  "name": "VSDC Settings",
  "owner": "Administrator",
  "permissions": [

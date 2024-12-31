@@ -38,7 +38,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "New\nSuccess\nError\nDo not Retry",
+   "options": "New\nSuccess\nError\nConnection Error\nDo not Retry",
    "read_only": 1
   },
   {
@@ -77,9 +77,9 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-09-26 14:56:39.674311",
+ "modified": "2024-12-30 23:33:31.028008",
  "modified_by": "Administrator",
- "module": "Smart Invoice API",
+ "module": "Smart Invoice Api",
  "name": "Sync Request",
  "naming_rule": "Expression",
  "owner": "Administrator",

@@ -307,8 +307,7 @@ def create_sync_request(endpoint, data):
         sr.endpoint = endpoint
         sr.status = "New"
         sr.doc_owner = frappe.session.user
-        sr.request_data = data            
-        
+        sr.request_data = data
         sr.flags.ignore_permissions=True
         sr.flags.ignore_mandatory=True
         sr.insert()   
@@ -323,26 +322,35 @@ def create_sync_request(endpoint, data):
 def call_vsdc(endpoint, data):
     settings = get_settings()
     base_url = settings.base_url
+    timeout = settings.timeout
 
     try:
         r = requests.post(
             base_url + endpoint, 
             json=data, 
             headers={"Content-Type": "application/json"},
-            timeout=10  # timeout period in seconds
+            timeout=timeout  # timeout period in seconds
         )
         response_json = r.json()
         return response_json.get("message", response_json)
 
     except json.decoder.JSONDecodeError as e:
         frappe.msgprint(title="Smart Invoice Failure", msg=str(r.text))
+        return str(e)
     except requests.Timeout:
-        error_msg = "Smart Invoice VSDC timedout"
+        error_msg = "Smart Invoice VSDC Timeout"
         frappe.log_error(error_msg, "VSDC timeout")
-        frappe.throw(error_msg)
+        return {'error': error_msg}
+    except requests.exceptions.RequestException as e:
+        # Catch any exceptions related to the request itself
+        error_msg = "VSDC Connection Error"
+        frappe.log_error(str(e), "VSDC Connection Error")
+        # frappe.throw(str(e))
+        return {'error': error_msg}
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "VSDC Error")
-        frappe.throw(str(e))
+        # frappe.throw(str(e))
+        return {'error': str(e)}
 
 
 def get_settings():
@@ -350,21 +358,6 @@ def get_settings():
     if not settings.base_url or not settings.environment:
         frappe.throw("VSDC Settings are incomplete. The admin will be notified.")
     return settings
-
-
-def get_status(response):
-    if response and response.get("resultCd", None):
-        return "Success"
-    else:
-        return "Error"
-
-
-def sync_attempt(doc):	
-    vsdc_response = call_vsdc(doc.endpoint, doc.request_data)
-    doc.attempts += 1
-    doc.response_data = vsdc_response
-    doc.status = get_status(vsdc_response)
-    doc.save()
 
 @frappe.whitelist()
 def test_connection():
