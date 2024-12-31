@@ -1,24 +1,123 @@
 # Copyright (c) 2024, Bantoo and contributors
 # For license information, please see license.txt
 
-import frappe
+import frappe, json, time
 from frappe.model.document import Document
-from smart_invoice_api.api import sync_attempt
+from smart_invoice_api.api import call_vsdc, get_settings as get_vsdc_settings
+from smart_invoice_app.app import save_purchase_invoice_api, create_qr_code
+from frappe.utils.background_jobs import enqueue
 
-
-"""
-Sync Request created {'resultCd': '000', 'resultMsg': 'It is succeeded', 'resultDt': '20240924163305', 'data': {'clsList': [{'cdCls': '06', 'cdClsNm': 'Sale category', 'userDfnNm1': None, 'dtlList': [{'cd': '4', 'cdNm': 'RVAT', 'userDfnCd1': None}]}, {'cdCls': '10', 'cdClsNm': 'Quantity Unit', 'userDfnNm1': None, 'dtlList': [{'cd': 'P1', 'cdNm': 'Pack', 'userDfnCd1': None}, {'cd': 'EA', 'cdNm': 'Each', 'userDfnCd1': None}, {'cd': 'PL', 'cdNm': 'Pallet', 'userDfnCd1': None}, {'cd': 'EACH', 'cdNm': 'Each', 'userDfnCd1': None}, {'cd': 'Ft', 'cdNm': 'Feet', 'userDfnCd1': None}, {'cd': 'MM', 'cdNm': 'Millimetre', 'userDfnCd1': None}, {'cd': 'In', 'cdNm': 'Inches', 'userDfnCd1': None}, {'cd': 'Oz', 'cdNm': 'Ounce', 'userDfnCd1': None}, {'cd': 'YR', 'cdNm': 'Year', 'userDfnCd1': None}, {'cd': 'M ', 'cdNm': 'Month', 'userDfnCd1': None}, {'cd': 'Wk', 'cdNm': 'Week', 'userDfnCd1': None}, {'cd': 'D', 'cdNm': 'Day', 'userDfnCd1': None}, {'cd': 'hr', 'cdNm': 'Hour', 'userDfnCd1': None}, {'cd': 'ha', 'cdNm': 'Hectare', 'userDfnCd1': None}, {'cd': 'yd2', 'cdNm': 'Square yards', 'userDfnCd1': None}, {'cd': 'ft2', 'cdNm': 'Square feet', 'userDfnCd1': None}, {'cd': 'cm2', 'cdNm': 'Square centimetre', 'userDfnCd1': None}, {'cd': 'm2', 'cdNm': 'Square metre', 'userDfnCd1': None}, {'cd': 'pt', 'cdNm': 'Pints', 'userDfnCd1': None}, {'cd': 'qt', 'cdNm': 'Quarts', 'userDfnCd1': None}, {'cd': 'mm', 'cdNm': 'Millilitre', 'userDfnCd1': None}, {'cd': '2X', 'cdNm': 'Meter/Minute', 'userDfnCd1': None}, {'cd': '4G', 'cdNm': 'Microliter', 'userDfnCd1': None}, {'cd': '4O', 'cdNm': 'Microfarad', 'userDfnCd1': None}, {'cd': '4T', 'cdNm': 'Pikofarad', 'userDfnCd1': None}, {'cd': 'A', 'cdNm': 'Ampere', 'userDfnCd1': None}, {'cd': 'A87', 'cdNm': 'Gigaohm', 'userDfnCd1': None}, {'cd': 'A93', 'cdNm': 'Gram/Cubic meter', 'userDfnCd1': None}, {'cd': 'ACR', 'cdNm': 'Acre', 'userDfnCd1': None}, {'cd': 'B34', 'cdNm': 'Kilogram/cubic decimeter', 'userDfnCd1': None}, {'cd': 'B45', 'cdNm': 'Kilomol', 'userDfnCd1': None}, {'cd': 'B47', 'cdNm': 'Kilonewton', 'userDfnCd1': None}, {'cd': 'B73', 'cdNm': 'Meganewton', 'userDfnCd1': None}, {'cd': 'B75', 'cdNm': 'Megohm', 'userDfnCd1': None}, {'cd': 'B78', 'cdNm': 'Megavolt', 'userDfnCd1': None}, {'cd': 'B84', 'cdNm': 'Microampere', 'userDfnCd1': None}, {'cd': 'BAG', 'cdNm': 'Bag', 'userDfnCd1': None}, {'cd': 'BAR', 'cdNm': 'bar', 'userDfnCd1': None}, {'cd': 'BOT', 'cdNm': 'Bottle', 'userDfnCd1': None}, {'cd': 'BQK', 'cdNm': 'Becquerel/kilogram', 'userDfnCd1': None}, {'cd': 'C10', 'cdNm': 'Millifarad', 'userDfnCd1': None}, {'cd': 'C36', 'cdNm': 'Mol per cubic meter', 'userDfnCd1': None}, {'cd': 'C38', 'cdNm': 'Mol per liter', 'userDfnCd1': None}, {'cd': 'C39', 'cdNm': 'Nanoampere', 'userDfnCd1': None}, {'cd': 'C3S', 'cdNm': 'Cubic centimeter/second', 'userDfnCd1': None}, {'cd': 'C41', 'cdNm': 'Nanofarad', 'userDfnCd1': None}, {'cd': 'C56', 'cdNm': 'Newton/Square millimeter', 'userDfnCd1': None}, {'cd': 'CCM', 'cdNm': 'Cubic centimeter', 'userDfnCd1': None}, {'cd': 'CD', 'cdNm': 'Candela', 'userDfnCd1': None}, {'cd': 'CDM', 'cdNm': 'Cubic decimeter', 'userDfnCd1': None}]}, {'cdCls': '400', 'cdClsNm': 'Taxation Type', 'userDfnNm1': 'Tax Rate', 'dtlList': [{'cd': 'A', 'cdNm': 'Standard Rated(16%)', 'userDfnCd1': '16'}, {'cd': 'B', 'cdNm': 'Minimum Taxable Value (MTV-16%)', 'userDfnCd1': '16'}, {'cd': 'C3', 'cdNm': 'Zero-rated by nature', 'userDfnCd1': '0'}, {'cd': 'D', 'cdNm': 'Exempt', 'userDfnCd1': '0'}, {'cd': 'RVAT', 'cdNm': 'Reverse VAT', 'userDfnCd1': '16'}, {'cd': 'E', 'cdNm': 'Disbursement', 'userDfnCd1': '0'}]}]}}
-"""
 class SyncRequest(Document):
+
 	def after_insert(self):
-		# frappe.enqueue(sync_attempt, doc=self, queue='short')
-		sync_attempt(self)
+		print('after_insert')   
+		self.sync_attempt()
 
+	def sync_attempt(self):
+		print("sync_attempt")
+		try:
+			vsdc_response = call_vsdc(self.endpoint, self.request_data)
+			self.response_data = vsdc_response
+			self.status = self.get_status(vsdc_response)
+			self.attempts+=1
+		except Exception as e:
+			self.attempts+=1
+			self.response_data = str(e)
+			frappe.msgprint(str(e))
+			self.save()
 
-	
+	@frappe.whitelist()
+	def queue(self):
+		print('queue')
+		testing = True
 
-	
+		is_sales_or_purchase_trans = self.endpoint in ['/trnsSales/saveSales', '/trnsPurchase/savePurchase']		
+		is_first_attempt = int(self.attempts or 0) <= 0
+		
+		if is_first_attempt or not self.request_data or not is_sales_or_purchase_trans or self.status != 'Connection Error':
+			print('returning')
+			return
 
+		print("self.attempts", self.attempts)
+		print('queued')
+		"smart_invoice_app.app.save_purchase_invoice_api"
+		"smart_invoice_app.app.save_invoice_api"
+		"""
+		- create req
+		- sync if attemps < 6
+		- check if valid request exists before recreating it
+		- if not valid, stop - allow invoice use to manually retry
+		- if valid, reuse
+			- if network connection exists
 
+		OR
+		- run batch scheduler event to pick all hanging requests and retry
+		- if network connection exists
+		- run sync_attempt
+		- run save_invoice_api manually after processes
 
+		OR
+		- improve method 1
+		- swap app.save_invoice_api with sync_attempt
+		- then save_invoice_api manually
 
+		"""
+
+		frappe.msgprint("Smart Invoice: Retrying Sync")
+		request_data = self.request_data
+		if type(self.request_data) == str:
+			request_data = json.loads(request_data)
+
+		invoice_name = request_data.get('cisInvcNo', None)
+		print("invoice_name", invoice_name)
+
+		if not invoice_name: 
+			print('no invoice name')
+			return
+
+		settings = get_vsdc_settings()
+		initial_delay = 1  # Initial delay in seconds
+		max_retries = settings.number_of_retries    # Maximum number of retries
+		delay = initial_delay * (2 ** (self.attempts - 1))  # Exponential backoff formula
+
+		if self.attempts < max_retries:
+			print(f"Retrying in {delay} seconds...")
+			time.sleep(delay)
+			if self.endpoint == '/trnsPurchase/savePurchase':
+				invoice_doc = frappe.get_doc('Purchase Invoice', invoice_name)
+				frappe.enqueue(
+					"smart_invoice_app.app.save_purchase_invoice_api",
+					invoice=invoice_doc,
+					queue='short',
+					now=False,
+					timeout=300
+				)
+			elif self.endpoint == '/trnsSales/saveSales':
+				invoice_doc = frappe.get_doc('Sales Invoice', invoice_name)
+				self.sync_attempt()
+				self.save()
+				frappe.db.commit()
+
+				json_data = json.loads(self.response_data)
+
+				if json_data.get("resultCd") == "000":
+					msg = json_data.get("data")
+					create_qr_code(invoice_doc, data=msg)
+				else:
+					frappe.msgprint(f"{json_data.get('resultMsg')}", title=f"Smart Invoice Failure - {json_data.get('resultCd')}")
+
+			print('enqueued')
+		else:
+			print("Max retries reached. Stopping retries.")
+			frappe.msgprint("Max retries reached. Please check the network or server status.")
+			
+	def get_status(self, response):
+		if response and response.get("resultCd", None):
+			if response.get("resultCd", None) in ['000', '001']:
+				return "Success"
+			else:
+				return "Error"
+		elif not response.get("resultCd", None):
+			return "Connection Error"
+		else:
+			return "Error"

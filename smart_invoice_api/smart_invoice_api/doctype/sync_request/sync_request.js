@@ -3,17 +3,17 @@
 
 frappe.ui.form.on("Sync Request", {
 	refresh(frm) {
-        // frm.add_custom_button("Sync", () => {
-        //     frappe.call({
-        //         method: 'smart_invoice_api.smart_invoice_api.doctype.sync_request.sync_attempt.sync_attempt',
-        //         args: {
-        //             docname: frm.doc.name
-        //         }
-        //     });
-        // });
+        frm.add_custom_button("Sync", () => {
+            frappe.call({
+                method: 'on_update',
+                self: frm.doc
+            });
+        });
+        
         // reset attempts
-        frm.add_custom_button("Reset Attempt", () => {
+        frm.add_custom_button("Reset", () => {
             frm.set_value('attempts', 0); 
+            frm.refresh_field('attempts');
         });
 	},
     attempts(frm) {
