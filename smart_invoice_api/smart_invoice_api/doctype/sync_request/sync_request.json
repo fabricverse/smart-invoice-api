@@ -14,7 +14,7 @@
   "section_break_hzbs",
   "request_data",
   "column_break_icrr",
-  "response_data"
+  "response_data_copy"
  ],
  "fields": [
   {
@@ -42,13 +42,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "response_data",
-   "fieldtype": "JSON",
-   "in_filter": 1,
-   "label": "Response Data",
-   "read_only": 1
-  },
-  {
    "fieldname": "doc_owner",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -73,11 +66,18 @@
    "in_list_view": 1,
    "label": "End Point",
    "reqd": 1
+  },
+  {
+   "fieldname": "response_data_copy",
+   "fieldtype": "Long Text",
+   "in_filter": 1,
+   "label": "Response Data Copy",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-12-30 23:33:31.028008",
+ "modified": "2025-01-01 23:33:26.694923",
  "modified_by": "Administrator",
  "module": "Smart Invoice Api",
  "name": "Sync Request",

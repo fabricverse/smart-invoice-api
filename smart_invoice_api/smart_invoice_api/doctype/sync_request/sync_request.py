@@ -8,23 +8,32 @@ from smart_invoice_app.app import save_purchase_invoice_api, create_qr_code
 from frappe.utils.background_jobs import enqueue
 
 class SyncRequest(Document):
-
 	def after_insert(self):
-		print('after_insert')   
+		print('after_insert')  
+		# if not self.flags.get('from_queue', False):
 		self.sync_attempt()
+
+	def before_save(self):
+		print("before_save")
+		# self.sync_attempt()
+		# self.flags.from_queue = False
 
 	def sync_attempt(self):
 		print("sync_attempt")
 		try:
-			vsdc_response = call_vsdc(self.endpoint, self.request_data)
-			self.response_data = vsdc_response
+			vsdc_response = call_vsdc(self.endpoint, json.loads(self.request_data))
+			self.response_data_copy = str(vsdc_response)
 			self.status = self.get_status(vsdc_response)
 			self.attempts+=1
 		except Exception as e:
 			self.attempts+=1
-			self.response_data = str(e)
-			frappe.msgprint(str(e))
-			self.save()
+			self.status = self.get_status(vsdc_response)
+			self.response_data_copy = str({"error": str(e)})
+			print(str({"error--": str(e)}))
+		finally:
+			self.save()			
+			frappe.db.commit()
+
 
 	@frappe.whitelist()
 	def queue(self):
@@ -39,31 +48,7 @@ class SyncRequest(Document):
 			return
 
 		print("self.attempts", self.attempts)
-		print('queued')
-		"smart_invoice_app.app.save_purchase_invoice_api"
-		"smart_invoice_app.app.save_invoice_api"
-		"""
-		- create req
-		- sync if attemps < 6
-		- check if valid request exists before recreating it
-		- if not valid, stop - allow invoice use to manually retry
-		- if valid, reuse
-			- if network connection exists
 
-		OR
-		- run batch scheduler event to pick all hanging requests and retry
-		- if network connection exists
-		- run sync_attempt
-		- run save_invoice_api manually after processes
-
-		OR
-		- improve method 1
-		- swap app.save_invoice_api with sync_attempt
-		- then save_invoice_api manually
-
-		"""
-
-		frappe.msgprint("Smart Invoice: Retrying Sync")
 		request_data = self.request_data
 		if type(self.request_data) == str:
 			request_data = json.loads(request_data)
@@ -83,6 +68,7 @@ class SyncRequest(Document):
 		if self.attempts < max_retries:
 			print(f"Retrying in {delay} seconds...")
 			time.sleep(delay)
+			print(1)
 			if self.endpoint == '/trnsPurchase/savePurchase':
 				invoice_doc = frappe.get_doc('Purchase Invoice', invoice_name)
 				frappe.enqueue(
@@ -93,23 +79,32 @@ class SyncRequest(Document):
 					timeout=300
 				)
 			elif self.endpoint == '/trnsSales/saveSales':
+				print('save sale')
 				invoice_doc = frappe.get_doc('Sales Invoice', invoice_name)
 				self.sync_attempt()
-				self.save()
-				frappe.db.commit()
 
-				json_data = json.loads(self.response_data)
+				# self.save()
+				# frappe.db.commit()
+
+				self.flags.from_queue = True
+
+				print('self.response_data_copy', self.response_data_copy)
+
+				json_data = json.loads(self.response_data_copy)
 
 				if json_data.get("resultCd") == "000":
 					msg = json_data.get("data")
 					create_qr_code(invoice_doc, data=msg)
 				else:
 					frappe.msgprint(f"{json_data.get('resultMsg')}", title=f"Smart Invoice Failure - {json_data.get('resultCd')}")
-
-			print('enqueued')
+				
+			print(f'{invoice_name} completed')
 		else:
+			self.status = "Do not Retry"
+			self.response_data_copy = {'error': "Max retries reached. Please check the network or server status."}
+			self.save()
+			frappe.db.commit()
 			print("Max retries reached. Stopping retries.")
-			frappe.msgprint("Max retries reached. Please check the network or server status.")
 			
 	def get_status(self, response):
 		if response and response.get("resultCd", None):
