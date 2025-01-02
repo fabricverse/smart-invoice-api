@@ -307,10 +307,10 @@ def create_sync_request(endpoint, data):
         sr.endpoint = endpoint
         sr.status = "New"
         sr.doc_owner = frappe.session.user
-        sr.request_data = data
+        sr.request_data = json.dumps(data)
         sr.flags.ignore_permissions=True
         sr.flags.ignore_mandatory=True
-        sr.insert()   
+        sr.insert()
         return sr
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Error creating Sync Request")
