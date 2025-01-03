@@ -3,26 +3,26 @@ import json
 import requests
 
 def get_last_request_date(endpoint):
-    # find the last sync_request with status success, endpoint and request_data containing lastReqDt
+    # find the last sync_request with status success, endpoint and request containing lastReqDt
     sync_request = frappe.get_all(
         "Sync Request",
         filters=[
             ["status", "=", "Success"],
             ["endpoint", "=", endpoint],
-            ["response_data", "like", "%resultDt%"],
-            ["response_data", "not like", '%"resultDt":null%']
+            ["response", "like", "%resultDt%"],
+            ["response", "not like", '%"resultDt":null%']
         ],
-        fields=["response_data"],
+        fields=["response"],
         order_by="creation desc",
         limit=1
     )
     
     if sync_request:
-        response_data = sync_request[0].response_data
-        response_data_json = json.loads(response_data)
+        response = sync_request[0].response
+        response_json = json.loads(response)
 
-        if response_data_json.get("resultDt", None):    
-            return response_data_json.get("resultDt", None)    
+        if response_json.get("resultDt", None):    
+            return response_json.get("resultDt", None)    
     return "20231001200000"
 
 
@@ -301,13 +301,13 @@ def create_sync_request(endpoint, data):
     
     try:
         if not data:
-            return {"response_data": {"resultCd": "10000", "resultMsg": f"{frappe.bold('data')} is required to create a sync request"}}
+            return {"response": {"resultCd": "10000", "resultMsg": f"{frappe.bold('data')} is required to create a sync request"}}
         sr = frappe.new_doc("Sync Request")
         sr.attempts = 0
         sr.endpoint = endpoint
         sr.status = "New"
         sr.doc_owner = frappe.session.user
-        sr.request_data = json.dumps(data)
+        sr.request = json.dumps(data)
         sr.flags.ignore_permissions=True
         sr.flags.ignore_mandatory=True
         sr.insert()
@@ -321,7 +321,7 @@ def create_sync_request(endpoint, data):
 # called from sync_request doctype
 def call_vsdc(endpoint, data):
     settings = get_settings()
-    base_url = settings.base_url
+    base_url = settings.base_url #  +'1'
     timeout = settings.timeout
 
     try:
@@ -335,22 +335,21 @@ def call_vsdc(endpoint, data):
         return response_json.get("message", response_json)
 
     except json.decoder.JSONDecodeError as e:
-        frappe.msgprint(title="Smart Invoice Failure", msg=str(r.text))
-        return str(e)
-    except requests.Timeout:
+        frappe.msgprint(title="Smart Invoice Failure", msg=str(r.text)) 
+        error_msg = str(e)
+        return {"error": error_msg, "text": r.text}
+    except requests.Timeout as e:
         error_msg = "Smart Invoice VSDC Timeout"
         frappe.log_error(error_msg, "VSDC timeout")
-        return {'error': error_msg}
+        return {"error": error_msg, "exception": str(e)}
     except requests.exceptions.RequestException as e:
         # Catch any exceptions related to the request itself
         error_msg = "VSDC Connection Error"
         frappe.log_error(str(e), "VSDC Connection Error")
-        # frappe.throw(str(e))
-        return {'error': error_msg}
+        return {"error": error_msg, "exception": str(e)}
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "VSDC Error")
-        # frappe.throw(str(e))
-        return {'error': str(e)}
+        return {"error": str(e)}
 
 
 def get_settings():
@@ -360,14 +359,26 @@ def get_settings():
     return settings
 
 @frappe.whitelist()
-def test_connection():
+def test_connection():   
     settings = get_settings()
     data={
-        "tpin": settings.tpin, "bhf_id": "000"
+        "tpin": settings.tpin, 
+        "bhf_id": "000"
     }
-    sr = select_codes(data)
-    if sr and sr.get("response_data"):
+    branches = select_branches(data)
 
-        frappe.msgprint("Connection Successful")
+    if branches:
+        response = branches.get("response")
+
+        data = {}
+        if response and response != "Smart Invoice VSDC Timeout":
+            data = json.loads(response)
+        if data and not data.get('error') and data.get('resultCd') in ["000", "001"] and response != "Smart Invoice VSDC Timeout":
+            frappe.msgprint("Connection Successful", indicator='green', alert=True)
+            return True
+        else:
+            frappe.msgprint("Connection Failure", indicator='red', alert=True)
+            return False
     else:
-        frappe.msgprint("Connection Failed")
+        frappe.msgprint("Connection Failure", indicator='red', alert=True)
+        return False

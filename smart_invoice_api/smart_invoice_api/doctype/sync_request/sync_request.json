@@ -12,17 +12,11 @@
   "status",
   "doc_owner",
   "section_break_hzbs",
-  "request_data",
+  "request",
   "column_break_icrr",
-  "response_data_copy"
+  "response"
  ],
  "fields": [
-  {
-   "fieldname": "request_data",
-   "fieldtype": "JSON",
-   "label": "Request Data",
-   "read_only": 1
-  },
   {
    "description": "Counts number of retries",
    "fieldname": "attempts",
@@ -37,6 +31,9 @@
   {
    "fieldname": "status",
    "fieldtype": "Select",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Status",
    "options": "New\nSuccess\nError\nConnection Error\nDo not Retry",
    "read_only": 1
@@ -50,7 +47,6 @@
    "reqd": 1
   },
   {
-   "collapsible": 1,
    "fieldname": "section_break_hzbs",
    "fieldtype": "Section Break",
    "label": "Sync Data"
@@ -64,20 +60,29 @@
    "fieldtype": "Data",
    "in_filter": 1,
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "End Point",
-   "reqd": 1
+   "read_only": 1,
+   "reqd": 1,
+   "search_index": 1
   },
   {
-   "fieldname": "response_data_copy",
+   "fieldname": "request",
+   "fieldtype": "Long Text",
+   "label": "Request Data",
+   "read_only": 1
+  },
+  {
+   "fieldname": "response",
    "fieldtype": "Long Text",
    "in_filter": 1,
-   "label": "Response Data Copy",
+   "label": "Response Data",
    "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-01-01 23:33:26.694923",
+ "modified": "2025-01-03 23:18:50.224580",
  "modified_by": "Administrator",
  "module": "Smart Invoice Api",
  "name": "Sync Request",
