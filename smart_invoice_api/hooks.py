@@ -143,7 +143,7 @@ app_license = "mit"
 scheduler_events = {
    "cron": {
 		"* * * * *": [
-			"smart_invoice_api.tasks.sync_requests"
+			"smart_invoice_api.sync.sync_failed_requests"
 		]
    }
 	# "all": [
