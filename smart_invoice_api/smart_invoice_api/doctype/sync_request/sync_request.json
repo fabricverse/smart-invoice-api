@@ -41,10 +41,9 @@
   {
    "fieldname": "doc_owner",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "label": "Owner",
    "options": "User",
-   "reqd": 1
+   "read_only": 1
   },
   {
    "fieldname": "section_break_hzbs",
@@ -82,7 +81,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-01-03 23:18:50.224580",
+ "modified": "2025-01-04 21:36:54.596521",
  "modified_by": "Administrator",
  "module": "Smart Invoice Api",
  "name": "Sync Request",
