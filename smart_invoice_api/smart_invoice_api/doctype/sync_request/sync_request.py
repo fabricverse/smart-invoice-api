@@ -48,7 +48,7 @@ class SyncRequest(Document):
             return
 
         settings = get_vsdc_settings()
-        delay = self.calculate_delay(settings)
+        delay = calculate_backoff_delay(self.attempts)
         max_retries = settings.number_of_retries    # Maximum number of retries
 
         if int(self.attempts) < int(max_retries):
@@ -56,23 +56,8 @@ class SyncRequest(Document):
             time.sleep(delay)
             if self.endpoint == '/trnsPurchase/savePurchase':
                 self.handle_invoice_sync(invoice_name, 'Purchase Invoice')
-                if not invoice:
-                    return
             elif self.endpoint == '/trnsSales/saveSales':
-                invoice = self.handle_invoice_sync(invoice_name, 'Sales Invoice')
-                if not invoice:
-                    return
-                response_json = json.loads(self.response)
-                
-                if response_json.get("resultCd") == "000":
-                    data = response_json.get("data")
-                    create_qr_code(invoice, data=data)
-                else:
-                    self.db_set({
-                        'status': self.get_status(response_json),
-                        'response': str(json.dumps(response_json))
-                    })
-                    self.notify_update()
+                self.handle_invoice_sync(invoice_name, 'Sales Invoice')
         else:
             self.status = "Do not Retry"
             self.response = str(json.dumps({"error": "Max retries reached. Please check the network or server status."}))
@@ -90,7 +75,20 @@ class SyncRequest(Document):
         except Exception as e:
             invoice_doc = None
 
-        return invoice_doc
+        if not invoice_doc:
+            return
+        response_json = json.loads(self.response)
+        
+        if response_json.get("resultCd") == "000":
+            if invoice_type == "Sales Invoice":
+                data = response_json.get("data")
+                create_qr_code(invoice_doc, data=data)
+        else:
+            self.db_set({
+                'status': self.get_status(response_json),
+                'response': str(json.dumps(response_json))
+            })
+            self.notify_update()
 
     def get_invoice_name(self):
         request = self.request
@@ -98,11 +96,6 @@ class SyncRequest(Document):
             request = json.loads(request)
 
         return request.get('cisInvcNo', None)
-
-    def calculate_delay(self, settings):
-        initial_delay = 1  # Initial delay in seconds
-        delay = calculate_backoff_delay(self.attempts, initial_delay)
-        return delay
             
     def get_status(self, response):
         if response and response.get("resultCd", None):
@@ -129,6 +122,7 @@ def is_called_from(name):
             return True
     return False
 
-def calculate_backoff_delay(attempt, initial_delay=1):
-    # Exponential backoff formula
-    return initial_delay * (2 ** (attempt - 1))
+def calculate_backoff_delay(attempt):
+    initial_delay = 1  # Initial delay in seconds
+    delay = 1#initial_delay * (2 ** (attempt - 1)) # Exponential backoff formula
+    return delay

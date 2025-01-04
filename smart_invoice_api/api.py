@@ -321,7 +321,7 @@ def create_sync_request(endpoint, data):
 # called from sync_request doctype
 def call_vsdc(endpoint, data):
     settings = get_settings()
-    base_url = settings.base_url #  +'1'
+    base_url = settings.base_url # +'1'
     timeout = settings.timeout
 
     try:
@@ -355,7 +355,7 @@ def call_vsdc(endpoint, data):
 def get_settings():
     settings = frappe.get_cached_doc("VSDC Settings", "VSDC Settings")
     if not settings.base_url or not settings.environment:
-        frappe.throw("VSDC Settings are incomplete. The admin will be notified.")
+        frappe.throw("VSDC Settings are incomplete. The admin will be notified.") # TODO: add notification
     return settings
 
 @frappe.whitelist()
@@ -365,20 +365,13 @@ def test_connection():
         "tpin": settings.tpin, 
         "bhf_id": "000"
     }
+    
     branches = select_branches(data)
-
     if branches:
-        response = branches.get("response")
-
-        data = {}
-        if response and response != "Smart Invoice VSDC Timeout":
-            data = json.loads(response)
-        if data and not data.get('error') and data.get('resultCd') in ["000", "001"] and response != "Smart Invoice VSDC Timeout":
-            frappe.msgprint("Connection Successful", indicator='green', alert=True)
-            return True
-        else:
-            frappe.msgprint("Connection Failure", indicator='red', alert=True)
-            return False
-    else:
-        frappe.msgprint("Connection Failure", indicator='red', alert=True)
-        return False
+        response = json.loads(branches.get("response"))
+        if response and response.get('error', response) != "Smart Invoice VSDC Timeout":
+            if response and not response.get('error') and response.get('resultCd') in ["000", "001"]:
+                frappe.msgprint("Connection Successful", indicator='green', alert=True)
+                return True
+    frappe.msgprint("Connection Failure", indicator='red', alert=True)
+    return False
