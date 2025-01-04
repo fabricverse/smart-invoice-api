@@ -329,7 +329,7 @@ def call_vsdc(endpoint, data):
             base_url + endpoint, 
             json=data, 
             headers={"Content-Type": "application/json"},
-            timeout=timeout  # timeout period in seconds
+            timeout=(timeout, 30)  # (connect timeout, read timeout)
         )
         response_json = r.json()
         return response_json.get("message", response_json)
