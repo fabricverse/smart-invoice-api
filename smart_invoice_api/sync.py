@@ -15,7 +15,7 @@ def sync_failed_requests():
 
     requests = frappe.get_all('Sync Request',
         filters={
-            'endpoint': ['in', ['/trnsSales/saveSales', '/trnsPurchase/savePurchase']],
+            'endpoint': ['in', ['/trnsSales/saveSales', '/trnsPurchase/savePurchase', '/stock/saveStockItems', '/stockMaster/saveStockMaster']],
             'status': ['in', ['Connection Error', 'New']],
             'attempts': ['<=', int(settings.number_of_retries)],
             'response': ['is', 'set']
@@ -24,8 +24,8 @@ def sync_failed_requests():
 
     print(f"{len(requests)} items queued for sync", requests)
     
-    for req in requests:
-        doc = frappe.get_doc('Sync Request', req)
+    for request in requests:
+        doc = frappe.get_doc('Sync Request', request)
         doc.queue()
     
     print('automatic sync complete')

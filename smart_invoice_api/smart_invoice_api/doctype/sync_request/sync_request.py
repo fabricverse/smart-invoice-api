@@ -35,29 +35,30 @@ class SyncRequest(Document):
 
     @frappe.whitelist()
     def queue(self):
-        testing = True
-
-        is_sales_or_purchase_trans = self.endpoint in ['/trnsSales/saveSales', '/trnsPurchase/savePurchase']		
+        valid_transaction = self.endpoint in ['/trnsSales/saveSales', '/trnsPurchase/savePurchase',  '/stock/saveStockItems', '/stockMaster/saveStockMaster']		
         # is_first_attempt = int(self.attempts or 0) <= 0
         
-        if not self.request or not is_sales_or_purchase_trans or self.status not in ['Connection Error', 'New']:
+        if not self.request or not valid_transaction or self.status not in ['Connection Error', 'New']:
         	return
-
-        invoice_name = self.get_invoice_name()
-        if not invoice_name:
-            return
-
+            
+        invoice_name = None
+        if self.endpoint in ['/trnsSales/saveSales', '/trnsPurchase/savePurchase']:
+            invoice_name = self.get_invoice_name()
+            if not invoice_name:
+                return
         settings = get_vsdc_settings()
-        delay = calculate_backoff_delay(self.attempts)
+        delay = 0 # calculate_backoff_delay(self.attempts)
         max_retries = settings.number_of_retries    # Maximum number of retries
 
         if int(self.attempts) < int(max_retries):
-            frappe.msgprint(f"Retrying in {delay} seconds...", alert=True, indicator="success")
+            frappe.msgprint(f"Retrying ...", alert=True, indicator="success")
             time.sleep(delay)
             if self.endpoint == '/trnsPurchase/savePurchase':
                 self.handle_invoice_sync(invoice_name, 'Purchase Invoice')
             elif self.endpoint == '/trnsSales/saveSales':
                 self.handle_invoice_sync(invoice_name, 'Sales Invoice')
+            elif self.endpoint in ['/stock/saveStockItems', '/stockMaster/saveStockMaster']:
+                self.handle_stock_sync()
         else:
             self.status = "Do not Retry"
             self.response = str(json.dumps({"error": "Max retries reached. Please check the network or server status."}))
@@ -66,7 +67,17 @@ class SyncRequest(Document):
                 self.save()
                 frappe.db.commit()
             frappe.msgprint("Max retries reached", alert=True, indicator="red")
-            
+
+    def handle_stock_sync(self):
+        self.sync()
+        response_json = json.loads(self.response)
+        
+        if response_json.get("resultCd") not in ["000", "001"]:
+            self.db_set({
+                'status': self.get_status(response_json),
+                'response': str(json.dumps(response_json))
+            })
+            self.notify_update()
 
     def handle_invoice_sync(self, invoice_name, invoice_type):
         try:
@@ -124,5 +135,5 @@ def is_called_from(name):
 
 def calculate_backoff_delay(attempt):
     initial_delay = 1  # Initial delay in seconds
-    delay = 1#initial_delay * (2 ** (attempt - 1)) # Exponential backoff formula
+    delay = initial_delay * (2 ** (attempt - 1)) # Exponential backoff formula
     return delay
