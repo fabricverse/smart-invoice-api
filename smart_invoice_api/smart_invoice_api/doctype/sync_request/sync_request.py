@@ -110,7 +110,7 @@ class SyncRequest(Document):
             
     def get_status(self, response):
         if response and response.get("resultCd", None):
-            if response.get("resultCd", None) in ['000', '001']:
+            if response.get("resultCd", None) in ['000', '001', '902']:
                 return "Success"
             elif response.get("status", None) in [400]:
                 return "Error"
