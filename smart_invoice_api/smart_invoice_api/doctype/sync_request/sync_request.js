@@ -3,9 +3,9 @@
 
 frappe.ui.form.on("Sync Request", {
 	refresh(frm) {
-
-        if (frm.doc.status !== "Success"){
-            let sync = frm.add_custom_button("Sync", () => {
+        let invoice_endpoint = ["/trnsSales/saveSales", "/trnsPurchase/savePurchase"].includes(frm.doc.endpoint)
+        if ((frm.doc.status !== "Success" && !invoice_endpoint) || (!["Success", "Error"].includes(frm.doc.status) && invoice_endpoint)){
+            let sync = frm.add_custom_button("Retry Sync", () => {
                 frappe.call({
                     method: 'sync',
                     doc: frm.doc,
@@ -23,13 +23,15 @@ frappe.ui.form.on("Sync Request", {
             sync.removeClass('btn-default').addClass('btn-success');
         }
         
-        // reset attempts
-        frm.add_custom_button("Reset", () => {
-            frm.set_value('attempts', 1); 
-            frm.set_value('status', "New"); 
-            frm.save();
-            frm.refresh_field('attempts');
-            frm.refresh_field('status');
-        });
+        if (frm.doc.status !== "Success"){
+            // reset attempts
+            frm.add_custom_button("Reset", () => {
+                frm.set_value('attempts', 1); 
+                frm.set_value('status', "New"); 
+                frm.save();
+                frm.refresh_field('attempts');
+                frm.refresh_field('status');
+            });
+        }
 	}
 });
