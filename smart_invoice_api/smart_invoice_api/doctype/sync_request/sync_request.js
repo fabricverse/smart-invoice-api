@@ -33,5 +33,21 @@ frappe.ui.form.on("Sync Request", {
                 frm.refresh_field('status');
             });
         }
+
+        frappe.realtime.on('vsdc_sync', (data) => {
+            if (data.status === "Success") {
+                frappe.show_alert({
+                    message: __(data.message),
+                    indicator: data.indicator
+                });
+                frm.reload_doc(); // Refresh the form to show the "Success" status
+            } else {
+                frappe.msgprint({
+                    title: __(data.title),
+                    message: __(data.message),
+                    indicator: data.indicator
+                });
+            }
+        });
 	}
 });

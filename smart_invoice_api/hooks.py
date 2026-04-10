@@ -141,11 +141,11 @@ app_license = "mit"
 #     },
 # }
 scheduler_events = {
-   "cron": {
-		"* * * * *": [
-			"smart_invoice_api.sync.sync_failed_requests"
-		]
-   }
+#    "cron": {
+# 		"* * * * *": [
+# 			"smart_invoice_api.sync.sync_failed_requests"
+# 		]
+#    }
 	# "all": [
 	# 	"smart_invoice_api.tasks.all"
 	# ],
