@@ -11,6 +11,10 @@
   "column_break_gecq",
   "status",
   "doc_owner",
+  "section_break_rolb",
+  "type",
+  "column_break_mhzn",
+  "document",
   "section_break_hzbs",
   "request",
   "column_break_icrr",
@@ -77,11 +81,32 @@
    "in_filter": 1,
    "label": "Response Data",
    "read_only": 1
+  },
+  {
+   "fieldname": "section_break_rolb",
+   "fieldtype": "Section Break",
+   "label": "Source"
+  },
+  {
+   "fieldname": "type",
+   "fieldtype": "Select",
+   "label": "Type",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_mhzn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "document",
+   "fieldtype": "Data",
+   "label": "Document",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-01-06 11:43:49.762036",
+ "modified": "2026-04-10 19:33:36.524929",
  "modified_by": "Administrator",
  "module": "Smart Invoice Api",
  "name": "Sync Request",
