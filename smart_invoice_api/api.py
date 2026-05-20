@@ -367,6 +367,8 @@ def test_connection():
     }
     
     branches = select_branches(data)
+    print('branches', branches)
+    return
     if branches:
         response = json.loads(branches.get("response"))
         if response and response.get('error', response) != "Smart Invoice VSDC Timeout":

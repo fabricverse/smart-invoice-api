@@ -163,6 +163,9 @@ scheduler_events = {
 	# ],
 }
 
+# Run this every time 'bench migrate' is executed to ensure the queue exists
+# after_migrate = "smart_invoice_api.setup.configure_vsdc_queue"
+
 # Testing
 # -------
 
