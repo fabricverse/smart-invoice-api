@@ -10,11 +10,13 @@
   "attempts",
   "column_break_gecq",
   "status",
-  "doc_owner",
+  "creator",
+  "modifier",
   "section_break_rolb",
   "type",
   "column_break_mhzn",
-  "document",
+  "entry",
+  "function",
   "section_break_hzbs",
   "request",
   "column_break_icrr",
@@ -40,13 +42,6 @@
    "in_standard_filter": 1,
    "label": "Status",
    "options": "New\nSuccess\nError\nConnection Error\nDo not Retry",
-   "read_only": 1
-  },
-  {
-   "fieldname": "doc_owner",
-   "fieldtype": "Link",
-   "label": "Owner",
-   "options": "User",
    "read_only": 1
   },
   {
@@ -89,8 +84,8 @@
   },
   {
    "fieldname": "type",
-   "fieldtype": "Select",
-   "label": "Type",
+   "fieldtype": "Data",
+   "label": "Doctype",
    "read_only": 1
   },
   {
@@ -98,15 +93,35 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "document",
+   "fieldname": "entry",
    "fieldtype": "Data",
-   "label": "Document",
+   "label": "Entry",
+   "read_only": 1
+  },
+  {
+   "fieldname": "function",
+   "fieldtype": "Data",
+   "label": "Function",
+   "read_only": 1
+  },
+  {
+   "fieldname": "creator",
+   "fieldtype": "Link",
+   "label": "Created By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "modifier",
+   "fieldtype": "Link",
+   "label": "Modified By",
+   "options": "User",
    "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-10 19:33:36.524929",
+ "modified": "2026-05-23 11:40:36.766149",
  "modified_by": "Administrator",
  "module": "Smart Invoice Api",
  "name": "Sync Request",

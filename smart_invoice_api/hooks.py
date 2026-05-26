@@ -130,6 +130,12 @@ app_license = "mit"
 # 	}
 # }
 
+doc_events = {
+    "Sync Request": {
+        "on_update": "smart_invoice_app.app.after_sync_process"
+    },
+}
+
 # Scheduled Tasks
 # ---------------
 

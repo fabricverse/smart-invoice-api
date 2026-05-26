@@ -3,36 +3,32 @@
 
 import frappe
 import json
-import time
+from frappe import _
 from frappe.model.document import Document
 from smart_invoice_api.api import call_vsdc, get_settings as get_vsdc_settings
-from smart_invoice_app.app import create_qr_code
+from smart_invoice_app.app import create_qr_code, after_sync_process
 
 class SyncRequest(Document):
-    def on_update(self):
-        """
-        Triggered whenever the document is saved.
-        """
-        # CRITICAL SAFETY CHECK: If this change originated from the background worker, stop.
+    def after_insert(self):
+        """Triggered whenever the document is saved."""
         if self.flags.in_vsdc_sync:
             return
 
-        # REMOVED 'Success' from this list. We never auto-re-enqueue a completed success.
         if self.status in ['New', 'Error', 'Connection Error'] and self.request:
             self.queue_sync()
 
     def queue_sync(self):
         """Enqueues the sync process to run in the background."""
+        frappe.publish_progress(25, title=_('Smart Invoice'), description=_('Queued...'))
+        
         frappe.enqueue(
-            'smart_invoice_api.smart_invoice_api.doctype.sync_request.sync_request.run_vsdc_sync',
+            'smart_invoice_api.smart_invoice_api.doctype.sync_request.sync_request.sync',
             queue='vsdc',
             timeout=300,
             doc_name=self.name,
             now=frappe.flags.in_test,
             enqueue_after_commit=True
         )
-        if not frappe.flags.in_test:
-            frappe.msgprint("VSDC Sync enqueued in background.", alert=True)
 
     def get_status_from_response(self, response):
         """Maps VSDC response codes to DocType status."""
@@ -55,18 +51,16 @@ class SyncRequest(Document):
 
 # --- Background Tasks ---
 
-def run_vsdc_sync(doc_name):
-    """
-    Background worker task with exponential backoff.
-    """
+def sync(doc_name):
+    """Background worker task with exponential backoff."""
     try:
-        # Load fresh copy inside worker transaction isolation
         doc = frappe.get_doc("Sync Request", doc_name)
     except frappe.DoesNotExistError:
         return
 
     # Set worker execution flag context early on the object instance
     doc.flags.in_vsdc_sync = True
+    frappe.publish_progress(50, title=_('Smart Invoice'), description=_('Connecting to ZRA servers...'))
 
     settings = get_vsdc_settings()
     max_retries = int(settings.number_of_retries or 5)
@@ -74,65 +68,66 @@ def run_vsdc_sync(doc_name):
 
     if current_attempts >= max_retries:
         doc.db_set("status", "Do not Retry")
-        notify_user(doc, f"Sync failed after {max_retries} attempts.", "red")
+        frappe.db.commit()
+        frappe.publish_progress(100, title=_('Smart Invoice'), description=_('Sync failed: Max retry limit reached.'))
+        notify_user(doc, f"Sync stopped after {max_retries} unsuccessful attempts.", "red")
         return
 
-    # Increment attempts cleanly
     new_attempts = current_attempts + 1
-    doc.db_set("attempts", new_attempts)
+    doc.db_set("attempts", new_attempts, update_modified=False)
 
     try:
         request_data = json.loads(doc.request)
-
-        frappe.errprint(f"--- STARTING VSDC SYNC FOR: {doc.name} ---")
         vsdc_response = call_vsdc(doc.endpoint, request_data)
-        frappe.errprint(f"--- FINISHED VSDC SYNC FOR: {doc.name} ---")
-        
         status = doc.get_status_from_response(vsdc_response)
         
         # Handle Retries for Connection Issues
         if status == "Connection Error":
             wait_time = 30 * (2 ** (new_attempts - 1))
+            doc.db_set({"status": status, "response": json.dumps(vsdc_response)}, update_modified=False)
+            frappe.db.commit()
             
             frappe.enqueue(
-                'smart_invoice_api.smart_invoice_api.doctype.sync_request.sync_request.run_vsdc_sync',
+                'smart_invoice_api.smart_invoice_api.doctype.sync_request.sync_request.sync',
                 queue='vsdc',
                 timeout=300,
                 doc_name=doc.name,
                 wait_for_seconds=wait_time
             )
-            
-            doc.db_set({
-                "status": status,
-                "response": json.dumps(vsdc_response)
-            })
-            
+            frappe.publish_progress(100, title=_('Smart Invoice'), description=_('Temporary connection issue. Retrying shortly...'))
             return
 
         # Persist final state metrics
-        doc.db_set({
-            "status": status,
-            "response": json.dumps(vsdc_response)
-        })
-
-        frappe.publish_realtime("vsdc_sync_progress", {"item": 'My Latest Fertilizer', "status": "Success"})
-        frappe.errprint('publish')
-        frappe.publish_realtime(event="vsdc_sync_progress", message={"status": "Success"}, user=frappe.session.user, after_commit=True)
-        frappe.publish_realtime(event="vsdc_sync_progress", message={"status": "Success"})
-        frappe.publish_realtime(event='msgprint', message='test', user=frappe.session.user)
-        if status == "Success":
-            process_success_logic(doc, vsdc_response)
-            notify_user(doc, f"Sync Request {doc.name} completed successfully.", "green")
-            
-        # Explicitly commit database transaction for this sequential item 
-        # so the next queued item can read a clean database state.
+        # only trigger doc update event if its a final state
+        # if status == "New":
+        # doc.db_set({"status": status, "response": json.dumps(vsdc_response)}) #, update_modified=False)
+        
+        # Regular lifecycle save to trigger hook paths natively
+        doc.status = status
+        doc.response = json.dumps(vsdc_response)
+        doc.flags.ignore_validate = True
+        doc.save(ignore_permissions=True)
         frappe.db.commit()
+            
+        
     
     except Exception as e:
-        frappe.db.rollback() # Clear transaction state if crashed mid-execution
+        frappe.db.rollback()
+        
+        doc.status = status
+        doc.response = json.dumps({"error": str(e), "partial_response": vsdc_response})
+        doc.flags.ignore_validate = True
+        doc.save(ignore_permissions=True)
+        frappe.db.commit()
+
+        # after_sync_process(doc)
         frappe.log_error(frappe.get_traceback(), f"VSDC Sync Crash: {doc.name}")
-        doc.db_set("status", "Error")
-        frappe.publish_realtime("vsdc_sync_progress", {"item": 'My Latest Fertilizer', "status": "Failed", "message": str(e)})
+
+        frappe.log_error(frappe.get_traceback(), f"VSDC Sync Crash: {doc.name}")
+        
+        frappe.publish_progress(100, title=_('Smart Invoice'), description=_('An unexpected system error occurred. View the <a href="/app/sync-request/{doc.name}">sync document for details.</a>')) 
+        # TODO error cant be in progress bar, unless it isnt removed after refresh
+        notify_user(doc, str(e), "red")
 
 
 def process_success_logic(doc, response_json):
@@ -154,14 +149,13 @@ def process_success_logic(doc, response_json):
 
 
 def notify_user(doc, message, indicator):
-    """Helper to push realtime notifications to the document owner."""
+    """Pushes a final completion event to trigger form reload on the frontend."""
     frappe.publish_realtime(
-        event="vsdc_sync",
+        event="vsdc_sync_complete",
         message={
             "status": doc.status,
-            "title": "VSDC Sync Update",
             "message": message,
             "indicator": indicator
         },
-        user=doc.owner
+        user=doc.modifier
     )

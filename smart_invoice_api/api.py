@@ -107,11 +107,11 @@ def save_purchase(data=None):
     return create_sync_request(endpoint, data)
 
 @frappe.whitelist()
-def save_item(data=None):
+def save_item(data=None, meta=None):
     if not data:
         data = frappe.request.json
     endpoint = "/items/saveItem"
-    return create_sync_request(endpoint, data)
+    return create_sync_request(endpoint, data, meta)
 
 @frappe.whitelist()
 def save_item_composition(data=None):
@@ -135,11 +135,11 @@ def save_stock_master(data=None):
     return create_sync_request(endpoint, data)
 
 @frappe.whitelist()
-def update_item(data=None):
+def update_item(data=None, meta=None):
     if not data:
         data = frappe.request.json
     endpoint = "/items/updateItem"
-    return create_sync_request(endpoint, data)
+    return create_sync_request(endpoint, data, meta)
 
 @frappe.whitelist()
 def save_branche_customer(data=None):
@@ -297,24 +297,30 @@ def initialize_vsdc(data=None):
     return create_sync_request(endpoint, payload)
 
 # creating a sync request doc triggers the call to vsdc
-def create_sync_request(endpoint, data):
-    
+def create_sync_request(endpoint, data, meta):
+    if not endpoint or not meta.get("doctype") or not meta.get("entry_name"):
+        frappe.throw("Endpoint, doctype and entry are required to create a sync request")
     try:
         if not data:
             return {"response": {"resultCd": "10000", "resultMsg": f"{frappe.bold('data')} is required to create a sync request"}}
+        # frappe.errprint(f"creator {meta.get('creator')}, regrid {data.get('regrId', 'Administrator')}, modifier {meta.get('modifier')}, modifier_id { data.get('modrId', None)}")
         sr = frappe.new_doc("Sync Request")
         sr.attempts = 0
         sr.endpoint = endpoint
         sr.status = "New"
-        sr.doc_owner = frappe.session.user
+        sr.creator = meta.get("creator", data.get("regrId", "Administrator"))
+        sr.modifier = meta.get("modifier", data.get("modrId", None))
         sr.request = json.dumps(data)
+        sr.function = meta.get("function")
+        sr.type = meta.get("doctype")
+        sr.entry = meta.get("entry_name")
         sr.flags.ignore_permissions=True
         sr.flags.ignore_mandatory=True
         sr.insert()
         return sr
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Error creating Sync Request")
-        print(frappe.get_traceback())
+        frappe.errprint(frappe.get_traceback())
         return {"error": str(e)}
 
 
@@ -337,19 +343,19 @@ def call_vsdc(endpoint, data):
     except json.decoder.JSONDecodeError as e:
         frappe.msgprint(title="Smart Invoice Failure", msg=str(r.text)) 
         error_msg = str(e)
-        return {"error": error_msg, "text": r.text}
+        return {"error": error_msg, "exception": r.text, "resultCd": "10001", "resultMsg": "Tech: Invalid JSON response from VSDC"}
     except requests.Timeout as e:
         error_msg = "Smart Invoice VSDC Timeout"
         frappe.log_error(error_msg, "VSDC timeout")
-        return {"error": error_msg, "exception": str(e)}
+        return {"error": error_msg, "exception": str(e), "resultCd": "10002", "resultMsg": "Tech: VSDC Timeout"}
     except requests.exceptions.RequestException as e:
         # Catch any exceptions related to the request itself
         error_msg = "VSDC Connection Error"
         frappe.log_error(str(e), "VSDC Connection Error")
-        return {"error": error_msg, "exception": str(e)}
+        return {"error": error_msg, "exception": str(e), "resultCd": "10003", "resultMsg": "Tech: VSDC Connection Error"}
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "VSDC Error")
-        return {"error": str(e)}
+        return {"error": str(e), "resultCd": "10004", "resultMsg": "Tech: Unexpected error occurred"}
 
 
 def get_settings():
