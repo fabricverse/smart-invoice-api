@@ -92,11 +92,11 @@ def save_branche_user(data=None):
     return create_sync_request(endpoint, api_data)
 
 @frappe.whitelist()
-def save_sales(data=None):
+def save_sales(data=None, meta=None ):
     if not data:
         data = frappe.request.json
     endpoint = "/trnsSales/saveSales"
-    return create_sync_request(endpoint, data)
+    return create_sync_request(endpoint, data, meta)
 
 
 @frappe.whitelist()
@@ -121,18 +121,18 @@ def save_item_composition(data=None):
     return create_sync_request(endpoint, data)
 
 @frappe.whitelist()
-def save_stock_items(data=None):
+def save_stock_items(data=None, meta=None):
     if not data:
         data = frappe.request.json
     endpoint = "/stock/saveStockItems"
-    return create_sync_request(endpoint, data)
+    return create_sync_request(endpoint, data, meta)
 
 @frappe.whitelist()
-def save_stock_master(data=None):
+def save_stock_master(data=None, meta=None):
     if not data:
         data = frappe.request.json
     endpoint = "/stockMaster/saveStockMaster"
-    return create_sync_request(endpoint, data)
+    return create_sync_request(endpoint, data, meta)
 
 @frappe.whitelist()
 def update_item(data=None, meta=None):
@@ -303,7 +303,6 @@ def create_sync_request(endpoint, data, meta):
     try:
         if not data:
             return {"response": {"resultCd": "10000", "resultMsg": f"{frappe.bold('data')} is required to create a sync request"}}
-        # frappe.errprint(f"creator {meta.get('creator')}, regrid {data.get('regrId', 'Administrator')}, modifier {meta.get('modifier')}, modifier_id { data.get('modrId', None)}")
         sr = frappe.new_doc("Sync Request")
         sr.attempts = 0
         sr.endpoint = endpoint

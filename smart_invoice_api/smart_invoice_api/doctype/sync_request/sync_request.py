@@ -19,7 +19,6 @@ class SyncRequest(Document):
 
     def queue_sync(self):
         """Enqueues the sync process to run in the background."""
-        frappe.publish_progress(25, title=_('Smart Invoice'), description=_('Queued...'))
         
         frappe.enqueue(
             'smart_invoice_api.smart_invoice_api.doctype.sync_request.sync_request.sync',
@@ -60,7 +59,7 @@ def sync(doc_name):
 
     # Set worker execution flag context early on the object instance
     doc.flags.in_vsdc_sync = True
-    frappe.publish_progress(50, title=_('Smart Invoice'), description=_('Connecting to ZRA servers...'))
+    # frappe.publish_progress(50, title=_('Smart Invoice'), description=_('Connecting to ZRA servers...'))
 
     settings = get_vsdc_settings()
     max_retries = int(settings.number_of_retries or 5)
@@ -69,7 +68,6 @@ def sync(doc_name):
     if current_attempts >= max_retries:
         doc.db_set("status", "Do not Retry")
         frappe.db.commit()
-        frappe.publish_progress(100, title=_('Smart Invoice'), description=_('Sync failed: Max retry limit reached.'))
         notify_user(doc, f"Sync stopped after {max_retries} unsuccessful attempts.", "red")
         return
 
@@ -94,68 +92,31 @@ def sync(doc_name):
                 doc_name=doc.name,
                 wait_for_seconds=wait_time
             )
-            frappe.publish_progress(100, title=_('Smart Invoice'), description=_('Temporary connection issue. Retrying shortly...'))
             return
 
-        # Persist final state metrics
-        # only trigger doc update event if its a final state
-        # if status == "New":
-        # doc.db_set({"status": status, "response": json.dumps(vsdc_response)}) #, update_modified=False)
-        
-        # Regular lifecycle save to trigger hook paths natively
         doc.status = status
         doc.response = json.dumps(vsdc_response)
         doc.flags.ignore_validate = True
         doc.save(ignore_permissions=True)
-        frappe.db.commit()
-            
+        frappe.db.commit()     
         
     
     except Exception as e:
-        frappe.db.rollback()
-        
-        doc.status = status
-        doc.response = json.dumps({"error": str(e), "partial_response": vsdc_response})
-        doc.flags.ignore_validate = True
-        doc.save(ignore_permissions=True)
+        doc.db_set({"status": status, "response": json.dumps(vsdc_response)})
         frappe.db.commit()
 
-        # after_sync_process(doc)
         frappe.log_error(frappe.get_traceback(), f"VSDC Sync Crash: {doc.name}")
-
-        frappe.log_error(frappe.get_traceback(), f"VSDC Sync Crash: {doc.name}")
-        
-        frappe.publish_progress(100, title=_('Smart Invoice'), description=_('An unexpected system error occurred. View the <a href="/app/sync-request/{doc.name}">sync document for details.</a>')) 
-        # TODO error cant be in progress bar, unless it isnt removed after refresh
         notify_user(doc, str(e), "red")
-
-
-def process_success_logic(doc, response_json):
-    """Handles post-sync logic like QR code generation for Invoices."""
-    sales_endpoints = ['/trnsSales/saveSales', '/trnsPurchase/savePurchase']
-    
-    if doc.endpoint in sales_endpoints:
-        invoice_name = doc.get_invoice_name()
-        is_sales = doc.endpoint == '/trnsSales/saveSales'
-        doctype = 'Sales Invoice' if is_sales else 'Purchase Invoice'
-        
-        if invoice_name:
-            try:
-                inv_doc = frappe.get_doc(doctype, invoice_name)
-                if is_sales and response_json.get("resultCd") == "000":
-                    create_qr_code(inv_doc, data=response_json.get("data"))
-            except Exception:
-                frappe.log_error(frappe.get_traceback(), "VSDC Post-Process Success Error")
-
 
 def notify_user(doc, message, indicator):
     """Pushes a final completion event to trigger form reload on the frontend."""
     frappe.publish_realtime(
-        event="vsdc_sync_complete",
+        event="sync_progress",
         message={
             "status": doc.status,
             "message": message,
-            "indicator": indicator
+            "indicator": indicator,
+            "name": doc.name
         },
         user=doc.modifier
     )
