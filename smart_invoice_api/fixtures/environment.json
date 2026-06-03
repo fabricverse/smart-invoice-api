@@ -1,18 +1,18 @@
 [
  {
-  "base_url": "http://5.78.126.215:8080/zrasandboxvsdc",
-  "docstatus": 0,
-  "doctype": "Environment",
-  "environment": "Sandbox",
-  "modified": "2024-10-31 18:09:50.021343",
-  "name": "Sandbox"
- },
- {
   "base_url": "http://5.78.126.215:8080/sandboxvsdc1.0.7.5",
   "docstatus": 0,
   "doctype": "Environment",
   "environment": "Production",
   "modified": "2024-12-10 16:50:11.339922",
   "name": "Production"
+ },
+ {
+  "base_url": "http://5.78.126.215:8080/vsdc",
+  "docstatus": 0,
+  "doctype": "Environment",
+  "environment": "Sandbox",
+  "modified": "2026-06-02 12:55:07.420617",
+  "name": "Sandbox"
  }
 ]

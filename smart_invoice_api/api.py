@@ -2,6 +2,8 @@ import frappe
 import json
 import requests
 
+DEFAULT_LAST_REQUEST_DT = "20000101000000"
+
 def get_last_request_date(endpoint):
     # find the last sync_request with status success, endpoint and request containing lastReqDt
     sync_request = frappe.get_all(
@@ -23,7 +25,7 @@ def get_last_request_date(endpoint):
 
         if response_json.get("resultDt", None):    
             return response_json.get("resultDt", None)    
-    return "20231001200000"
+    return DEFAULT_LAST_REQUEST_DT
 
 
 # called from smart_invoice_app / rest api
@@ -33,7 +35,7 @@ def select_codes(data=None):
         data = frappe.request.json
     endpoint = "/code/selectCodes"
     if data.get("initialize", False):
-        last_req_dt = "20231001200000"
+        last_req_dt = DEFAULT_LAST_REQUEST_DT
     else:
         last_req_dt = get_last_request_date(endpoint)
     
@@ -52,7 +54,7 @@ def select_item_classes(data=None):
     endpoint = "/itemClass/selectItemsClass"
 
     if data.get("initialize", False):
-        last_req_dt = "20231001200000"
+        last_req_dt = DEFAULT_LAST_REQUEST_DT
     else:
         last_req_dt = get_last_request_date(endpoint)
     
@@ -65,13 +67,13 @@ def select_item_classes(data=None):
 
 
 @frappe.whitelist()
-def save_branche_user(data=None):
+def save_branche_user(data=None, meta=None):
     if not data:
         data = frappe.request.json
     endpoint = "/branches/saveBrancheUser"
 
     if data.get("initialize"):
-        last_req_dt = "20231001200000"
+        last_req_dt = DEFAULT_LAST_REQUEST_DT
     else:
         last_req_dt = get_last_request_date(endpoint)
     
@@ -89,7 +91,7 @@ def save_branche_user(data=None):
         "modrId": data["modrId"],
         "lastReqDt": last_req_dt
     }
-    return create_sync_request(endpoint, api_data)
+    return create_sync_request(endpoint, api_data, meta)
 
 @frappe.whitelist()
 def save_sales(data=None, meta=None ):
@@ -100,11 +102,11 @@ def save_sales(data=None, meta=None ):
 
 
 @frappe.whitelist()
-def save_purchase(data=None):
+def save_purchase(data=None, meta=None):
     if not data:
         data = frappe.request.json
     endpoint = "/trnsPurchase/savePurchase"
-    return create_sync_request(endpoint, data)
+    return create_sync_request(endpoint, data, meta)
 
 @frappe.whitelist()
 def save_item(data=None, meta=None):
@@ -169,13 +171,13 @@ def save_branche_customer(data=None):
 
 
 @frappe.whitelist()
-def select_branches(data=None):
+def select_branches(data=None, meta=None, initialize=False):
     if not data:
         data = frappe.request.json
     endpoint = "/branches/selectBranches"
 
-    if data.get("initialize", False):
-        last_req_dt = "20231001200000"
+    if initialize:
+        last_req_dt = DEFAULT_LAST_REQUEST_DT
     else:
         last_req_dt = get_last_request_date(endpoint)
     
@@ -184,7 +186,7 @@ def select_branches(data=None):
         "bhfId": data["bhf_id"],
         "lastReqDt": last_req_dt
     }
-    return create_sync_request(endpoint, data)
+    return create_sync_request(endpoint, data, meta)
     
     
 @frappe.whitelist()
@@ -194,7 +196,7 @@ def select_trns_purchase_sales(data=None):
     endpoint = "/trnsPurchase/selectTrnsPurchaseSales"
 
     if data.get("initialize", False):
-        last_req_dt = "20231001200000"
+        last_req_dt = DEFAULT_LAST_REQUEST_DT
     else:
         last_req_dt = get_last_request_date(endpoint)
     
@@ -214,7 +216,7 @@ def select_import_items(data=None):
     endpoint = "/imports/selectImportItems"
 
     if data.get("initialize", False):
-        last_req_dt = "20231001200000"
+        last_req_dt = DEFAULT_LAST_REQUEST_DT
     else:
         last_req_dt = get_last_request_date(endpoint)
     
@@ -250,7 +252,7 @@ def select_items(data=None):
     endpoint = "/items/selectItems"
     
     if data.get("initialize", False):
-        last_req_dt = "20231001200000"
+        last_req_dt = DEFAULT_LAST_REQUEST_DT
     else:
         last_req_dt = get_last_request_date(endpoint)
 
@@ -308,7 +310,7 @@ def create_sync_request(endpoint, data, meta):
         sr.endpoint = endpoint
         sr.status = "New"
         sr.creator = meta.get("creator", data.get("regrId", "Administrator"))
-        sr.modifier = meta.get("modifier", data.get("modrId", None))
+        sr.modifier = meta.get("modifier", data.get("modrId", "Administrator"))
         sr.request = json.dumps(data)
         sr.function = meta.get("function")
         sr.type = meta.get("doctype")
@@ -363,15 +365,36 @@ def get_settings():
         frappe.throw("VSDC Settings are incomplete. The admin will be notified.") # TODO: add notification
     return settings
 
-@frappe.whitelist()
-def test_connection():   
-    settings = get_settings()
-    data={
-        "tpin": settings.tpin, 
-        "bhf_id": "000"
-    }
+def get_companies_with_tpin():
+    companies = frappe.get_all("Company", fields=["name", "tax_id"], filters={"tax_id": ["is", "set"]}, limit=1)
+    return companies
+
+import inspect
+def get_function_name():
+    """Returns the name of the caller function."""
+    return inspect.stack()[1].function
+
+def get_branches_testing(initialize=False): 
+    """ Get all branches for all companies
+        Smart Invoice returns all company branches using branch code 000
+    """
     
-    branches = select_branches(data)
+    companies = get_companies_with_tpin()
+    meta={"function": get_function_name(), "doctype": "Branch", "entry_name": "Headquarter"}
+
+    data = {
+        "bhf_id": "000",
+        "tpin": companies[0].tax_id
+    }
+    select_branches(data, meta, initialize)
+
+
+@frappe.whitelist()
+def test_connection():
+    get_branches_testing(initialize=False)
+    
+    return
+
     print('branches', branches)
     return
     if branches:
