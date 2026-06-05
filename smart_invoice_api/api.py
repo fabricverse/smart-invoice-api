@@ -300,8 +300,8 @@ def initialize_vsdc(data=None):
 
 # creating a sync request doc triggers the call to vsdc
 def create_sync_request(endpoint, data, meta):
-    if not endpoint or not meta.get("doctype") or not meta.get("entry_name"):
-        frappe.throw("Endpoint, doctype and entry are required to create a sync request")
+    if not endpoint or not meta.get("doctype"):
+        frappe.throw("Endpoint and doctype are required to create a sync request")
     try:
         if not data:
             return {"response": {"resultCd": "10000", "resultMsg": f"{frappe.bold('data')} is required to create a sync request"}}
@@ -314,7 +314,7 @@ def create_sync_request(endpoint, data, meta):
         sr.request = json.dumps(data)
         sr.function = meta.get("function")
         sr.type = meta.get("doctype")
-        sr.entry = meta.get("entry_name")
+        sr.entry = meta.get("entry_name", "")
         sr.flags.ignore_permissions=True
         sr.flags.ignore_mandatory=True
         sr.insert()
@@ -380,7 +380,7 @@ def get_branches_testing(initialize=False):
     """
     
     companies = get_companies_with_tpin()
-    meta={"function": get_function_name(), "doctype": "Branch", "entry_name": "Headquarter"}
+    meta={"function": get_function_name(), "doctype": "Branch"}
 
     data = {
         "bhf_id": "000",
@@ -394,14 +394,3 @@ def test_connection():
     get_branches_testing(initialize=False)
     
     return
-
-    print('branches', branches)
-    return
-    if branches:
-        response = json.loads(branches.get("response"))
-        if response and response.get('error', response) != "Smart Invoice VSDC Timeout":
-            if response and not response.get('error') and response.get('resultCd') in ["000", "001"]:
-                frappe.msgprint("Connection Successful", indicator='green', alert=True)
-                return True
-    frappe.msgprint("Connection Failure", indicator='red', alert=True)
-    return False
