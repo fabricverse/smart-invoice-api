@@ -215,7 +215,7 @@ def select_import_items(data=None, meta=None, initialize=False):
         data = frappe.request.json
     endpoint = "/imports/selectImportItems"
 
-    if data.get("initialize", False):
+    if initialize:
         last_req_dt = DEFAULT_LAST_REQUEST_DT
     else:
         last_req_dt = get_last_request_date(endpoint)
