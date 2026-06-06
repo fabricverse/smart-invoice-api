@@ -116,11 +116,11 @@ def save_item(data=None, meta=None):
     return create_sync_request(endpoint, data, meta)
 
 @frappe.whitelist()
-def save_item_composition(data=None):
+def save_item_composition(data=None, meta=None):
     if not data:
         data = frappe.request.json
     endpoint = "/items/saveItemComposition"
-    return create_sync_request(endpoint, data)
+    return create_sync_request(endpoint, data, meta)
 
 @frappe.whitelist()
 def save_stock_items(data=None, meta=None):
@@ -210,7 +210,7 @@ def select_trns_purchase_sales(data=None):
 
 
 @frappe.whitelist()
-def select_import_items(data=None):
+def select_import_items(data=None, meta=None, initialize=False):
     if not data:
         data = frappe.request.json
     endpoint = "/imports/selectImportItems"
@@ -226,7 +226,7 @@ def select_import_items(data=None):
         "lastReqDt": last_req_dt
     }
     
-    return create_sync_request(endpoint, data)
+    return create_sync_request(endpoint, data, meta)
 
 
 @frappe.whitelist()
