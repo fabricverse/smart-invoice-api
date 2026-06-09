@@ -230,11 +230,11 @@ def select_import_items(data=None, meta=None, initialize=False):
 
 
 @frappe.whitelist()
-def update_import_items(data=None):
+def update_import_items(data=None, meta=None):
     if not data:
         data = frappe.request.json
     endpoint = "/imports/updateImportItems"
-    return create_sync_request(endpoint, data)
+    return create_sync_request(endpoint, data, meta)
 
 
 @frappe.whitelist()
@@ -314,7 +314,7 @@ def create_sync_request(endpoint, data, meta):
         sr.request = json.dumps(data)
         sr.function = meta.get("function")
         sr.type = meta.get("doctype")
-        sr.entry = meta.get("entry_name", "")
+        sr.entry = meta.get("entry_name", meta.get("entry", ""))
         sr.flags.ignore_permissions=True
         sr.flags.ignore_mandatory=True
         sr.insert()
