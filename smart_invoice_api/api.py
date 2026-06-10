@@ -272,10 +272,11 @@ def update_vsdc_details(tpin, vsdc_serial, environment):
         settings.environment = environment 
 
         settings.save()
+        frappe.db.commit()
 
 
 @frappe.whitelist()
-def initialize_vsdc(data=None):
+def initialize_vsdc(data=None, meta=None):
     if not data:
         data = frappe.request.json
 
@@ -293,10 +294,10 @@ def initialize_vsdc(data=None):
         "dvcSrlNo": vsdc_serial
     }
 
-    if default_server == 1:
-        update_vsdc_details(tpin, vsdc_serial, environment)
+    
+    update_vsdc_details(tpin, vsdc_serial, environment)
 
-    return create_sync_request(endpoint, payload)
+    return create_sync_request(endpoint, payload, meta)
 
 # creating a sync request doc triggers the call to vsdc
 def create_sync_request(endpoint, data, meta):
@@ -378,13 +379,17 @@ def get_branches_testing(initialize=False):
     """ Get all branches for all companies
         Smart Invoice returns all company branches using branch code 000
     """
-    
-    companies = get_companies_with_tpin()
+    settings = get_settings()
+    tpin = settings.tpin
+    if not tpin:
+        companies = get_companies_with_tpin()
+        tpin = companies[0].tax_id
+
     meta={"function": get_function_name(), "doctype": "Branch"}
 
     data = {
         "bhf_id": "000",
-        "tpin": companies[0].tax_id
+        "tpin": tpin
     }
     select_branches(data, meta, initialize)
 
