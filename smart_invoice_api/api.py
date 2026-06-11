@@ -48,12 +48,12 @@ def select_codes(data=None, initialize=None,  meta=None):
 
 
 @frappe.whitelist()
-def select_item_classes(data=None):
+def select_item_classes(data=None, initialize=False, meta=None):
     if not data:
         data = frappe.request.json
     endpoint = "/itemClass/selectItemsClass"
 
-    if data.get("initialize", False):
+    if initialize:
         last_req_dt = DEFAULT_LAST_REQUEST_DT
     else:
         last_req_dt = get_last_request_date(endpoint)
@@ -63,7 +63,7 @@ def select_item_classes(data=None):
         "bhfId": data["bhf_id"],
         "lastReqDt": last_req_dt
     }
-    return create_sync_request(endpoint, data)
+    return create_sync_request(endpoint, data, meta)
 
 
 @frappe.whitelist()
