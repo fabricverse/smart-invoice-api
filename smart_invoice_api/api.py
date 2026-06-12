@@ -144,7 +144,7 @@ def update_item(data=None, meta=None):
     return create_sync_request(endpoint, data, meta)
 
 @frappe.whitelist()
-def save_branche_customer(data=None):
+def save_branche_customer(data=None, meta=None):
     if not data:
         data = frappe.request.json
     endpoint = "/branches/saveBrancheCustomers"
@@ -167,7 +167,7 @@ def save_branche_customer(data=None):
         "modrId": data["modrId"]
     }
     
-    return create_sync_request(endpoint, api_data)
+    return create_sync_request(endpoint, api_data, meta)
 
 
 @frappe.whitelist()
