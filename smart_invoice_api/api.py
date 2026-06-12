@@ -245,20 +245,20 @@ def select_item(data=None):
     return create_sync_request(endpoint, data)
 
 @frappe.whitelist()
-def select_items(data=None):
+def select_items(data=None, meta=None, initialize=False):
     if not data:
         data = frappe.request.json
 
     endpoint = "/items/selectItems"
     
-    if data.get("initialize", False):
+    if initialize:
         last_req_dt = DEFAULT_LAST_REQUEST_DT
     else:
         last_req_dt = get_last_request_date(endpoint)
 
     data.update({"lastReqDt": last_req_dt})
 
-    return create_sync_request(endpoint, data)
+    return create_sync_request(endpoint, data, meta)
 
 def update_vsdc_details(tpin, vsdc_serial, environment):
     settings = get_settings()
