@@ -190,12 +190,12 @@ def select_branches(data=None, meta=None, initialize=False):
     
     
 @frappe.whitelist()
-def select_trns_purchase_sales(data=None):
+def select_trns_purchase_sales(data=None, meta=None, initialize=False):
     if not data:
         data = frappe.request.json
     endpoint = "/trnsPurchase/selectTrnsPurchaseSales"
 
-    if data.get("initialize", False):
+    if initialize:
         last_req_dt = DEFAULT_LAST_REQUEST_DT
     else:
         last_req_dt = get_last_request_date(endpoint)
@@ -206,7 +206,7 @@ def select_trns_purchase_sales(data=None):
         "lastReqDt": last_req_dt
     }
     
-    return create_sync_request(endpoint, data)
+    return create_sync_request(endpoint, data, meta)
 
 
 @frappe.whitelist()
