@@ -13,6 +13,7 @@
   "creator",
   "modifier",
   "section_break_rolb",
+  "company",
   "type",
   "column_break_mhzn",
   "entry",
@@ -118,11 +119,19 @@
    "label": "Modified By",
    "options": "User",
    "read_only": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "read_only": 1,
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-06-11 10:39:07.632574",
+ "modified": "2026-06-16 17:38:01.842368",
  "modified_by": "Administrator",
  "module": "Smart Invoice Api",
  "name": "Sync Request",

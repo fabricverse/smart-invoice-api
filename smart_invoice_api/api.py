@@ -251,20 +251,20 @@ def select_items(data=None, meta=None, initialize=False):
     return create_sync_request(endpoint, data, meta)
 
 
-def update_vsdc_details(tpin, vsdc_serial, environment):
-    settings = get_settings()
+# def update_vsdc_details(tpin, vsdc_serial, environment):
+#     settings = get_settings()
 
-    if (
-        settings.tpin != tpin
-        or settings.vsdc_serial != vsdc_serial
-        or settings.environment != environment
-    ):
-        settings.tpin = tpin
-        settings.vsdc_serial = vsdc_serial
-        settings.environment = environment
+#     if (
+#         settings.tpin != tpin
+#         or settings.vsdc_serial != vsdc_serial
+#         or settings.environment != environment
+#     ):
+#         settings.tpin = tpin
+#         settings.vsdc_serial = vsdc_serial
+#         settings.environment = environment
 
-        settings.save()
-        frappe.db.commit()
+#         settings.save()
+#         frappe.db.commit()
 
 
 @frappe.whitelist()
@@ -282,7 +282,7 @@ def initialize_vsdc(data=None, meta=None):
 
     payload = {"tpin": tpin, "bhfId": branch, "dvcSrlNo": vsdc_serial}
 
-    update_vsdc_details(tpin, vsdc_serial, environment)
+    # update_vsdc_details(tpin, vsdc_serial, environment)
 
     return create_sync_request(endpoint, payload, meta)
 
@@ -309,6 +309,7 @@ def create_sync_request(endpoint, data, meta):
         sr.function = meta.get("function")
         sr.type = meta.get("doctype")
         sr.entry = meta.get("entry")
+        sr.company = meta.get("company")
         sr.flags.ignore_permissions = True
         sr.flags.ignore_mandatory = True
         sr.insert()
@@ -320,14 +321,14 @@ def create_sync_request(endpoint, data, meta):
 
 
 # called from sync_request doctype
-def call_vsdc(endpoint, data):
-    settings = get_settings()
+def call_vsdc(doc, data):
+    settings = get_settings(doc.company)
     base_url = settings.base_url  # +'1'
     timeout = settings.timeout
 
     try:
         r = requests.post(
-            base_url + endpoint,
+            base_url + doc.endpoint,
             json=data,
             headers={"Content-Type": "application/json"},
             timeout=(timeout, 30),  # (connect timeout, read timeout)
@@ -372,12 +373,10 @@ def call_vsdc(endpoint, data):
         }
 
 
-def get_settings():
-    settings = frappe.get_cached_doc("VSDC Settings", "VSDC Settings")
+def get_settings(company):
+    settings = frappe.get_cached_doc("Smart Invoice Settings", company)
     if not settings.base_url or not settings.environment:
-        frappe.throw(
-            "VSDC Settings are incomplete. The admin will be notified."
-        )  # TODO: add notification
+        frappe.throw("VSDC Settings are incomplete")  # TODO: add notification
     return settings
 
 
@@ -396,24 +395,23 @@ def get_function_name():
     return inspect.stack()[1].function
 
 
-def get_branches_testing(initialize=False):
+def get_branches_testing(settings, initialize=False):
     """Get all branches for all companies
     Smart Invoice returns all company branches using branch code 000
     """
-    settings = get_settings()
-    tpin = settings.tpin
-    if not tpin:
-        companies = get_companies_with_tpin()
-        tpin = companies[0].tax_id
 
-    meta = {"function": get_function_name(), "doctype": "Branch"}
-
-    data = {"bhf_id": "000", "tpin": tpin}
+    meta = {
+        "function": get_function_name(),
+        "doctype": settings.doctype,
+        "entry": settings.name,
+    }
+    data = {"bhf_id": "000", "tpin": settings.tpin}
     select_branches(data, meta, initialize)
 
 
 @frappe.whitelist()
-def test_connection():
-    get_branches_testing(initialize=False)
+def test_connection(company_name):
+    settings = get_settings(company_name)
+    get_branches_testing(settings, initialize=False)
 
     return

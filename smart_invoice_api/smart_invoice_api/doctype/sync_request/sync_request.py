@@ -6,8 +6,7 @@ import json
 import frappe
 from frappe.model.document import Document
 
-from smart_invoice_api.api import call_vsdc
-from smart_invoice_api.api import get_settings as get_vsdc_settings
+from smart_invoice_api.api import call_vsdc, get_settings
 
 
 class SyncRequest(Document):
@@ -68,8 +67,8 @@ def sync(doc_name):
     doc.flags.in_vsdc_sync = True
     # frappe.publish_progress(50, title=_('Smart Invoice'), description=_('Connecting to ZRA servers...'))
 
-    settings = get_vsdc_settings()
-    max_retries = int(settings.number_of_retries or 5)
+    settings = get_settings(doc.company)
+    max_retries = int(settings.max_retries or 5)
     current_attempts = int(doc.attempts or 0)
 
     if current_attempts >= max_retries:
@@ -85,7 +84,7 @@ def sync(doc_name):
 
     try:
         request_data = json.loads(doc.request)
-        vsdc_response = call_vsdc(doc.endpoint, request_data)
+        vsdc_response = call_vsdc(doc, request_data)
         status = doc.get_status_from_response(vsdc_response)
 
         # Handle Retries for Connection Issues
