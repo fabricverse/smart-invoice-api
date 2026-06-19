@@ -299,6 +299,8 @@ def create_sync_request(endpoint, data, meta):
                     "resultMsg": f"{frappe.bold('data')} is required to create a sync request",
                 }
             }
+        company_name = meta.get("company") or get_company_name_by_tpin(data.get("tpin"))
+
         sr = frappe.new_doc("Sync Request")
         sr.attempts = 0
         sr.endpoint = endpoint
@@ -309,7 +311,7 @@ def create_sync_request(endpoint, data, meta):
         sr.function = meta.get("function")
         sr.type = meta.get("doctype")
         sr.entry = meta.get("entry")
-        sr.company = meta.get("company")
+        sr.company = company_name
         sr.flags.ignore_permissions = True
         sr.flags.ignore_mandatory = True
         sr.insert()
@@ -371,6 +373,31 @@ def call_vsdc(doc, data):
             "resultCd": "10004",
             "resultMsg": "Tech: Unexpected error occurred",
         }
+
+
+def get_company_name_by_tpin(tpin):
+    """
+    Returns company name from tpin
+
+    Args:
+        tpin (str): tpin of the company
+
+    Returns:
+        company_name (str): name of company
+    """
+    companies = frappe.get_all(
+        "Company",
+        fields=["name", "tax_id"],
+        filters={"tax_id": tpin},
+        pluck="name",
+        limit=1,
+    )
+
+    company_name = companies[0]
+    if company_name:
+        return company_name
+    else:
+        return None
 
 
 def get_settings(company):
